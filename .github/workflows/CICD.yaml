@@ -196,7 +196,7 @@ jobs:
           1..3 | ForEach-Object {
             $projects = (Get-Variable -name "Projects$_").Value
             Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Json=$($projects | ConvertTo-Json -compress)"
-            Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Count=$($projects.count"
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Count=$($projects.count)"
             Write-Host "Projects$($_)Json=$($projects | ConvertTo-Json -compress)"
           }
 
