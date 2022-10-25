@@ -37,6 +37,12 @@ jobs:
       deliveryTargetCount: ${{ steps.DetermineDeliveryTargets.outputs.DeliveryTargetCount }}
       githubRunner: ${{ steps.ReadSettings.outputs.GitHubRunnerJson }}
       checkRunId: ${{ steps.CreateCheckRun.outputs.checkRunId }}
+      projects1: ${{ steps.BuildOrder.outputs.Projects1Json }}
+      projects1Count: ${{ steps.BuildOrder.outputs.Projects1Count }}
+      projects2: ${{ steps.BuildOrder.outputs.Projects2Json }}
+      projects2Count: ${{ steps.BuildOrder.outputs.Projects2Count }}
+      projects3: ${{ steps.BuildOrder.outputs.Projects3Json }}
+      projects3Count: ${{ steps.BuildOrder.outputs.Projects3Count }}
     steps:
       - name: Create CI/CD Workflow Check Run
         id: CreateCheckRun
@@ -180,6 +186,20 @@ jobs:
           Write-Host "DeliveryTargetCount=$($deliveryTargets.Count)"
           Add-Content -Path $env:GITHUB_ENV -Value "DeliveryTargets=$deliveryTargetsJson"
 
+      - name: Determine Build Order
+        id: BuildOrder
+        run: |
+          $projects = '${{ steps.ReadSettings.outputs.ProjectsJson }}' | ConvertFrom-Json
+          $projects1 = @(@("Common","Misc") | Where-Object { $projects -contains $_ })
+          $projects2 = @@("W1") | Where-Object { $projects -contains $_ })
+          $projects3 = @(@("DK","IT") | Where-Object { $projects -contains $_ })
+          1..3 | ForEach-Object {
+            $projects = (Get-Variable -name "Projects$_").Value
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Json=$($projects | ConvertTo-Json -compress)"
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Count=$($projects.count"
+            Write-Host "Projects$($_)Json=$($projects | ConvertTo-Json -compress)"
+          }
+
   CheckForUpdates:
     runs-on: [ windows-latest ]
     needs: [ Initialization ]
@@ -202,11 +222,11 @@ jobs:
 
   Build:
     needs: [ Initialization ]
-    if: ${{ needs.Initialization.outputs.projectCount > 0 }}
+    if: ${{ needs.Initialization.outputs.projects1Count > 0 }}
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     strategy:
       matrix:
-        project: ${{ fromJson(needs.Initialization.outputs.projects) }}
+        project: ${{ fromJson(needs.Initialization.outputs.projects1) }}
       fail-fast: false
     name: Build ${{ matrix.project }}
     outputs:
