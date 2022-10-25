@@ -1,6 +1,6 @@
 ﻿{
-    "id":  "4feea934-c32b-49b9-9706-66e5e8a3d2df",
-    "name":  "Licensing",
+    "id":  "6a23335a-8b74-482e-b793-04a5c01c4a16",
+    "name":  "Misc",
     "publisher":  "Freddy",
     "version":  "1.0.0.0",
     "brief":  "",
@@ -19,8 +19,8 @@
     "application":  "19.0.0.0",
     "idRanges":  [
                      {
-                         "from":  51000,
-                         "to":  52000
+                         "from":  62000,
+                         "to":  63000
                      }
                  ],
     "resourceExposurePolicy":  {
