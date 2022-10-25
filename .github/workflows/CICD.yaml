@@ -191,7 +191,7 @@ jobs:
         run: |
           $projects = '${{ steps.ReadSettings.outputs.ProjectsJson }}' | ConvertFrom-Json
           $projects1 = @(@("Common","Misc") | Where-Object { $projects -contains $_ })
-          $projects2 = @@("W1") | Where-Object { $projects -contains $_ })
+          $projects2 = @(@("W1") | Where-Object { $projects -contains $_ })
           $projects3 = @(@("DK","IT") | Where-Object { $projects -contains $_ })
           1..3 | ForEach-Object {
             $projects = (Get-Variable -name "Projects$_").Value
