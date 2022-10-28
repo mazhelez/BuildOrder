@@ -228,7 +228,6 @@ jobs:
 
   Build1:
     needs: [ Initialization ]
-    if: ${{ needs.Initialization.outputs.projects1Count > 0 }}
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     strategy:
       matrix:
