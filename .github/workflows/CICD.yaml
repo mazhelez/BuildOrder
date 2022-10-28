@@ -460,7 +460,7 @@ jobs:
           Project: ${{ matrix.project }}
 
       - name: Update Build Job Check Run
-        if: (always()) && (github.event_name == 'workflow_run')
+        if: always() && github.event_name == 'workflow_run'
         uses: actions/github-script@v6
         env:
           TestResultMD: ${{ steps.analyzeTestResults.outputs.TestResultMD }}
@@ -490,7 +490,7 @@ jobs:
 
   Build2:
     needs: [ Initialization, Build1 ]
-    if: ${{ always() && needs.Initialization.outputs.projects2Count > 0 && needs.Build1.result != 'failure' }}
+    if: always() && needs.Initialization.outputs.projects2Count > 0 && needs.Build1.result != 'failure'
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     strategy:
       matrix:
@@ -722,7 +722,7 @@ jobs:
           Project: ${{ matrix.project }}
 
       - name: Update Build Job Check Run
-        if: (always()) && (github.event_name == 'workflow_run')
+        if: always() && github.event_name == 'workflow_run'
         uses: actions/github-script@v6
         env:
           TestResultMD: ${{ steps.analyzeTestResults.outputs.TestResultMD }}
@@ -752,7 +752,7 @@ jobs:
 
   Build:
     needs: [ Initialization, Build2 ]
-    if: ${{ needs.Initialization.outputs.projects3Count > 0 }}
+    if: always() && needs.Initialization.outputs.projects3Count > 0 && needs.Build2.result != 'failure'
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     strategy:
       matrix:
@@ -984,7 +984,7 @@ jobs:
           Project: ${{ matrix.project }}
 
       - name: Update Build Job Check Run
-        if: (always()) && (github.event_name == 'workflow_run')
+        if: always() && github.event_name == 'workflow_run'
         uses: actions/github-script@v6
         env:
           TestResultMD: ${{ steps.analyzeTestResults.outputs.TestResultMD }}
@@ -1014,7 +1014,7 @@ jobs:
 
   Deploy:
     needs: [ Initialization, Build ]
-    if: ${{ (github.event_name != 'workflow_run') && (github.ref_name == 'main') && (needs.Initialization.outputs.environmentCount > 0) }}
+    if: always() && needs.Build.result != 'failure' && github.event_name != 'workflow_run' && github.ref_name == 'main' && needs.Initialization.outputs.environmentCount > 0
     strategy: ${{ fromJson(needs.Initialization.outputs.environments) }}
     runs-on: ${{ fromJson(matrix.os) }}
     name: Deploy to ${{ matrix.environment }}
@@ -1113,7 +1113,7 @@ jobs:
 
   Deliver:
     needs: [ Initialization, Build ]
-    if: ${{ (github.event_name != 'workflow_run') && (github.ref_name == 'main') && (needs.Initialization.outputs.deliveryTargetCount > 0) }}
+    if: always() && needs.Build.result != 'failure' && github.event_name != 'workflow_run' && github.ref_name == 'main' && needs.Initialization.outputs.deliveryTargetCount > 0
     strategy:
       matrix:
         deliveryTarget: ${{ fromJson(needs.Initialization.outputs.deliveryTargets) }}
@@ -1160,7 +1160,7 @@ jobs:
           artifacts: '${{ github.workspace }}\.artifacts'
 
   UpdatePRcheck:
-    if: (always()) && (github.event_name == 'workflow_run') && (github.event.workflow_run.conclusion == 'success')
+    if: always() && needs.Build.result != 'failure' && github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
     runs-on: [ windows-latest ]
     needs: [ Initialization, Build ]
     steps:
