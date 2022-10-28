@@ -204,7 +204,8 @@ jobs:
             }
             Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Json=$projectsJson"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Count=$($projects.count)"
-            Write-Host "Projects$($_)Json=$($projects | ConvertTo-Json -compress)"
+            Write-Host "Projects$($_)Json=$projectsJson"
+            Write-Host "Projects$($_)Count=$projectsCount"
           }
 
   CheckForUpdates:
