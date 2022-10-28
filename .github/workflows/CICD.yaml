@@ -195,12 +195,12 @@ jobs:
           $buildOrder = '${{ steps.ReadSettings.outputs.BuildOrderJson }}' | ConvertFrom-Json
           $depth = ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
           1..$depth | ForEach-Object {
-            $projects = @($buildOrder."$_" | Where-Object { $projects -contains $_ })
-            if ($projects.Count -eq 1) {
-              $projectsJSon = "[$($projects | ConvertTo-Json -compress)]"
+            $ps = @($buildOrder."$_" | Where-Object { $projects -contains $_ })
+            if ($ps.Count -eq 1) {
+              $projectsJSon = "[$($ps | ConvertTo-Json -compress)]"
             }
             else {
-              $projectsJSon = $projects | ConvertTo-Json -compress
+              $projectsJSon = $ps | ConvertTo-Json -compress
             }
             Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Json=$projectsJson"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Count=$($projects.count)"
