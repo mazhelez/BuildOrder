@@ -228,6 +228,7 @@ jobs:
 
   Build1:
     needs: [ Initialization ]
+    if: ${{ needs.Initialization.outputs.projects1Count > 0 }}
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     strategy:
       matrix:
@@ -489,7 +490,7 @@ jobs:
 
   Build2:
     needs: [ Initialization, Build1 ]
-    if: ${{ needs.Initialization.outputs.projects2Count > 0 }}
+    if: ${{ always() && needs.Initialization.outputs.projects2Count > 0 && needs.Build1.result != 'failure' }}
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     strategy:
       matrix:
