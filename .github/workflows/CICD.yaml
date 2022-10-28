@@ -37,12 +37,14 @@ jobs:
       deliveryTargetCount: ${{ steps.DetermineDeliveryTargets.outputs.DeliveryTargetCount }}
       githubRunner: ${{ steps.ReadSettings.outputs.GitHubRunnerJson }}
       checkRunId: ${{ steps.CreateCheckRun.outputs.checkRunId }}
-      projects1: ${{ steps.ReadSettings.outputs.Projects1Json }}
-      projects1Count: ${{ steps.ReadSettings.outputs.Projects1Count }}
-      projects2: ${{ steps.ReadSettings.outputs.Projects2Json }}
-      projects2Count: ${{ steps.ReadSettings.outputs.Projects2Count }}
-      projects3: ${{ steps.ReadSettings.outputs.Projects3Json }}
-      projects3Count: ${{ steps.ReadSettings.outputs.Projects3Count }}
+      buildOrderJson: ${{ steps.ReadSettings.outputs.BuildOrderJson }}
+      buildOrderDepth: ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
+      projects1: ${{ steps.BuildOrder.outputs.Projects1Json }}
+      projects1Count: ${{ steps.BuildOrder.outputs.Projects1Count }}
+      projects2: ${{ steps.BuildOrder.outputs.Projects2Json }}
+      projects2Count: ${{ steps.BuildOrder.outputs.Projects2Count }}
+      projects3: ${{ steps.BuildOrder.outputs.Projects3Json }}
+      projects3Count: ${{ steps.BuildOrder.outputs.Projects3Count }}
     steps:
       - name: Create CI/CD Workflow Check Run
         id: CreateCheckRun
@@ -185,6 +187,25 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "DeliveryTargetCount=$($deliveryTargets.Count)"
           Write-Host "DeliveryTargetCount=$($deliveryTargets.Count)"
           Add-Content -Path $env:GITHUB_ENV -Value "DeliveryTargets=$deliveryTargetsJson"
+
+      - name: Determine Build Order
+        id: BuildOrder
+        run: |
+          $projects = '${{ steps.ReadSettings.outputs.ProjectsJson }}' | ConvertFrom-Json
+          $buildOrder = '${{ steps.ReadSettings.outputs.BuildOrderJson }}' | ConvertFrom-Json
+          $depth = ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
+          1..$depth | ForEach-Object {
+            $projects = @($buildOrder."$_" | Where-Object { $projects -contains $_ })
+            if ($projects.Count -eq 1) {
+              $projectsJSon = "[$($projects | ConvertTo-Json -compress)]"
+            }
+            else {
+              $projectsJSon = $projects | ConvertTo-Json -compress
+            }
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Json=$projectsJson"
+            Add-Content -Path $env:GITHUB_OUTPUT -Value "Projects$($_)Count=$($projects.count)"
+            Write-Host "Projects$($_)Json=$($projects | ConvertTo-Json -compress)"
+          }
 
   CheckForUpdates:
     runs-on: [ windows-latest ]
