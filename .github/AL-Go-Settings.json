@@ -1,12 +1,5 @@
 {
     "type":  "PTE",
     "templateUrl":  "https://github.com/freddydk/AL-Go-PTE@main",
-    "useProjectDependencies":  true,
-    "projectDependencies": {
-        "Common": [ ],
-        "Misc": [ ],
-        "W1": [ "Common" ],
-        "DK": [ "Common", "W1" ],
-        "IT": [ "Common", "W1" ]
-    }
+    "useProjectDependencies":  true
 }
