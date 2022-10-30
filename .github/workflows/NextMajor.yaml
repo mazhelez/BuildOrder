@@ -24,7 +24,6 @@ jobs:
       projectDependenciesJson: ${{ steps.ReadSettings.outputs.ProjectDependenciesJson }}
       buildOrderJson: ${{ steps.ReadSettings.outputs.BuildOrderJson }}
       buildOrderDepth: ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
-      WorkflowDepth: 3
       projects1: ${{ steps.BuildOrder.outputs.Projects1Json }}
       projects1Count: ${{ steps.BuildOrder.outputs.Projects1Count }}
       projects2: ${{ steps.BuildOrder.outputs.Projects2Json }}
