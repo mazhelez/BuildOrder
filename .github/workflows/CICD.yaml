@@ -27,7 +27,7 @@ jobs:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: [ windows-latest ]
     env:
-      WorkflowDepth: 3
+      workflowDepth: 3
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
       settings: ${{ steps.ReadSettings.outputs.SettingsJson }}
@@ -42,6 +42,7 @@ jobs:
       projectDependenciesJson: ${{ steps.ReadSettings.outputs.ProjectDependenciesJson }}
       buildOrderJson: ${{ steps.ReadSettings.outputs.BuildOrderJson }}
       buildOrderDepth: ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
+      WorkflowDepth: 3
       projects1: ${{ steps.BuildOrder.outputs.Projects1Json }}
       projects1Count: ${{ steps.BuildOrder.outputs.Projects1Count }}
       projects2: ${{ steps.BuildOrder.outputs.Projects2Json }}
@@ -199,7 +200,7 @@ jobs:
           $projects = '${{ steps.ReadSettings.outputs.ProjectsJson }}' | ConvertFrom-Json
           $buildOrder = '${{ steps.ReadSettings.outputs.BuildOrderJson }}' | ConvertFrom-Json
           $depth = ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
-          $workflowDepth = ${{ env.WorkflowDepth }}
+          $workflowDepth = ${{ steps.ReadSettings.outputs.WorkflowDepth }}
           if ($depth -lt $workflowDepth) {
             Write-Host "::Error::Project Dependencies depth is $depth. Workflow is only setup for $workflowDepth. You need to Run Update AL-Go System Files to update the workflows"
             $host.SetShouldExit(1)
