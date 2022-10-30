@@ -1,4 +1,4 @@
-name: CI/CD
+﻿name: CI/CD
 
 on:
   workflow_dispatch:
@@ -193,6 +193,7 @@ jobs:
       - name: Determine Build Order
         id: BuildOrder
         run: |
+          $ErrorActionPreference = "STOP"
           $projects = '${{ steps.ReadSettings.outputs.ProjectsJson }}' | ConvertFrom-Json
           $buildOrder = '${{ steps.ReadSettings.outputs.BuildOrderJson }}' | ConvertFrom-Json
           $depth = ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
@@ -248,7 +249,7 @@ jobs:
 
   Build1:
     needs: [ Initialization ]
-    if: ${{ needs.Initialization.outputs.projects1Count > 0 }}
+    if: needs.Initialization.outputs.projects1Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     strategy:
       matrix:
