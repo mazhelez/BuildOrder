@@ -13,6 +13,8 @@ defaults:
 jobs:
   Initialization:
     runs-on: [ windows-latest ]
+    env:
+      workflowDepth: 3
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
       settings: ${{ steps.ReadSettings.outputs.SettingsJson }}
@@ -22,7 +24,6 @@ jobs:
       projectDependenciesJson: ${{ steps.ReadSettings.outputs.ProjectDependenciesJson }}
       buildOrderJson: ${{ steps.ReadSettings.outputs.BuildOrderJson }}
       buildOrderDepth: ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
-      WorkflowDepth: 3
       projects1: ${{ steps.BuildOrder.outputs.Projects1Json }}
       projects1Count: ${{ steps.BuildOrder.outputs.Projects1Count }}
       projects2: ${{ steps.BuildOrder.outputs.Projects2Json }}
@@ -47,6 +48,7 @@ jobs:
           getProjects: 'Y'
 
       - name: Determine Build Order
+        if: env.WorkflowDepth > 1
         id: BuildOrder
         run: |
           $ErrorActionPreference = "STOP"
