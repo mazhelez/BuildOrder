@@ -1,4 +1,5 @@
 ﻿{
     "type":  "PTE",
-    "templateUrl":  "https://github.com/freddydk/AL-Go-PTE@main"
+    "templateUrl":  "https://github.com/freddydk/AL-Go-PTE@main",
+    "useProjectDependencies":  true
 }
