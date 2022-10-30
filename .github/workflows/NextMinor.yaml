@@ -1,4 +1,4 @@
-﻿name: Test Next Minor
+﻿name: Test/Test Next Minor
 
 on:
   workflow_dispatch:
