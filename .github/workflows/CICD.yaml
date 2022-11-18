@@ -8,9 +8,12 @@ on:
       - completed
   push:
     paths-ignore:
-      - 'README.md'
-      - '.github/**'
+      - '**.md'
+      - '.github/workflows/*.yaml'
+      - '!.github/workflows/CICD.yaml'
     branches: [ 'main', 'release/*', 'feature/*' ]
+
+run-name: ${{ fromJson(format('["","Check pull request {0}{2} from {3}/{4}{1} {5}"]','#',':',github.event.workflow_run.pull_requests[0].number,github.event.workflow_run.head_repository.owner.login,github.event.workflow_run.head_branch,github.event.workflow_run.display_title))[github.event_name == 'workflow_run'] }}
 
 permissions:
   contents: read
@@ -72,10 +75,24 @@ jobs:
             core.setOutput('checkRunId', response.data.id);
 
       - name: Checkout
+        if: github.event_name != 'workflow_run' || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository)
         uses: actions/checkout@v3
+        with:
+          lfs: true
+    
+      - name: Checkout Pull Request
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository
+        uses: actions/checkout@v2
+        with:
+          lfs: true
+          ref: ${{ github.event.workflow_run.head_branch }}
 
-      - name: 'Download Pull Request Changes'
-        if: github.event_name == 'workflow_run'
+      - name: Dump
+        run: |
+          Write-Host "YES!"
+
+      - name: Download Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         uses: actions/github-script@v6
         with:
           script: |
@@ -97,8 +114,8 @@ jobs:
             var fs = require('fs');
             fs.writeFileSync('.PullRequestChanges.zip', Buffer.from(download.data));
 
-      - name: Apply Pull Request Changes
-        if: github.event_name == 'workflow_run'
+      - name: Apply Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         run: |
           $ErrorActionPreference = "STOP"
           $location = (Get-Location).path
@@ -115,10 +132,8 @@ jobs:
             $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
             $extension = [System.IO.Path]::GetExtension($path)
             $filename = [System.IO.Path]::GetFileName($path)
-            if ('${{ github.event.workflow_run.head_repository.full_name }}' -ne $ENV:GITHUB_REPOSITORY) {
-              if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
-                throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
-              }
+            if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
+              throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
             }
             if ($deleteFile) {
               if (Test-Path $newPath) {
@@ -137,6 +152,7 @@ jobs:
               Copy-Item $path -Destination $newFolder -Force
             }
           }
+          Remove-Item -Path $prfolder -recurse -force
 
       - name: Initialize the workflow
         id: init
@@ -314,17 +330,25 @@ jobs:
             });
 
       - name: Checkout
+        if: github.event_name != 'workflow_run' || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository)
         uses: actions/checkout@v3
         with:
           lfs: true
+
+      - name: Checkout Pull Request
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository
+        uses: actions/checkout@v2
+        with:
+          lfs: true
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
 
-      - name: 'Download Pull Request Changes'
-        if: github.event_name == 'workflow_run'
+      - name: Download Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         uses: actions/github-script@v6
         with:
           script: |
@@ -346,8 +370,8 @@ jobs:
             var fs = require('fs');
             fs.writeFileSync('.PullRequestChanges.zip', Buffer.from(download.data));
 
-      - name: Apply Pull Request Changes
-        if: github.event_name == 'workflow_run'
+      - name: Apply Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         run: |
           $ErrorActionPreference = "STOP"
           $location = (Get-Location).path
@@ -364,10 +388,8 @@ jobs:
             $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
             $extension = [System.IO.Path]::GetExtension($path)
             $filename = [System.IO.Path]::GetFileName($path)
-            if ('${{ github.event.workflow_run.head_repository.full_name }}' -ne $ENV:GITHUB_REPOSITORY) {
-              if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
-                throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
-              }
+            if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
+              throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
             }
             if ($deleteFile) {
               if (Test-Path $newPath) {
@@ -386,6 +408,7 @@ jobs:
               Copy-Item $path -Destination $newFolder -Force
             }
           }
+          Remove-Item -Path $prfolder -recurse -force
 
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
@@ -419,17 +442,24 @@ jobs:
           $ErrorActionPreference = "STOP"
           $settings = '${{ env.Settings }}' | ConvertFrom-Json
           $project = '${{ matrix.project }}'
+          if ("$ENV:GITHUB_EVENT_NAME" -eq 'workflow_run') {
+            $event = Get-Content $ENV:GITHUB_EVENT_PATH -Encoding UTF8 | ConvertFrom-Json
+            $ref = "PR$($event.workflow_run.pull_requests[0].number)"
+          }
+          else {
+            $ref = "$ENV:GITHUB_REF_NAME".Replace('/','_')
+          }
           if ($project -eq ".") { $project = $settings.RepoName }
-          'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput' | ForEach-Object {
+          'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$("$ENV:GITHUB_REF_NAME".Replace('/','_'))-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
+            $value = "$($project.Replace('\','_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
 
       - name: Publish artifacts - apps
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.appsArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/Apps/'
@@ -437,7 +467,7 @@ jobs:
 
       - name: Publish artifacts - dependencies
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.dependenciesArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/Dependencies/'
@@ -445,7 +475,7 @@ jobs:
 
       - name: Publish artifacts - test apps
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.testAppsArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/TestApps/'
@@ -457,6 +487,14 @@ jobs:
         with:
           name: ${{ env.buildOutputArtifactsName }}
           path: '${{ matrix.project }}/BuildOutput.txt'
+          if-no-files-found: ignore
+
+      - name: Publish artifacts - container event log
+        uses: actions/upload-artifact@v3
+        if: (failure()) && (hashFiles(format('{0}/ContainerEventLog.evtx',matrix.project)) != '')
+        with:
+          name: ${{ env.ContainerEventLogArtifactsName }}
+          path: '${{ matrix.project }}/ContainerEventLog.evtx'
           if-no-files-found: ignore
 
       - name: Publish artifacts - test results
@@ -577,17 +615,25 @@ jobs:
             });
 
       - name: Checkout
+        if: github.event_name != 'workflow_run' || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository)
         uses: actions/checkout@v3
         with:
           lfs: true
+
+      - name: Checkout Pull Request
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository
+        uses: actions/checkout@v2
+        with:
+          lfs: true
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
 
-      - name: 'Download Pull Request Changes'
-        if: github.event_name == 'workflow_run'
+      - name: Download Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         uses: actions/github-script@v6
         with:
           script: |
@@ -609,8 +655,8 @@ jobs:
             var fs = require('fs');
             fs.writeFileSync('.PullRequestChanges.zip', Buffer.from(download.data));
 
-      - name: Apply Pull Request Changes
-        if: github.event_name == 'workflow_run'
+      - name: Apply Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         run: |
           $ErrorActionPreference = "STOP"
           $location = (Get-Location).path
@@ -627,10 +673,8 @@ jobs:
             $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
             $extension = [System.IO.Path]::GetExtension($path)
             $filename = [System.IO.Path]::GetFileName($path)
-            if ('${{ github.event.workflow_run.head_repository.full_name }}' -ne $ENV:GITHUB_REPOSITORY) {
-              if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
-                throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
-              }
+            if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
+              throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
             }
             if ($deleteFile) {
               if (Test-Path $newPath) {
@@ -649,6 +693,7 @@ jobs:
               Copy-Item $path -Destination $newFolder -Force
             }
           }
+          Remove-Item -Path $prfolder -recurse -force
 
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
@@ -682,17 +727,24 @@ jobs:
           $ErrorActionPreference = "STOP"
           $settings = '${{ env.Settings }}' | ConvertFrom-Json
           $project = '${{ matrix.project }}'
+          if ("$ENV:GITHUB_EVENT_NAME" -eq 'workflow_run') {
+            $event = Get-Content $ENV:GITHUB_EVENT_PATH -Encoding UTF8 | ConvertFrom-Json
+            $ref = "PR$($event.workflow_run.pull_requests[0].number)"
+          }
+          else {
+            $ref = "$ENV:GITHUB_REF_NAME".Replace('/','_')
+          }
           if ($project -eq ".") { $project = $settings.RepoName }
-          'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput' | ForEach-Object {
+          'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$("$ENV:GITHUB_REF_NAME".Replace('/','_'))-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
+            $value = "$($project.Replace('\','_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
 
       - name: Publish artifacts - apps
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.appsArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/Apps/'
@@ -700,7 +752,7 @@ jobs:
 
       - name: Publish artifacts - dependencies
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.dependenciesArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/Dependencies/'
@@ -708,7 +760,7 @@ jobs:
 
       - name: Publish artifacts - test apps
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.testAppsArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/TestApps/'
@@ -720,6 +772,14 @@ jobs:
         with:
           name: ${{ env.buildOutputArtifactsName }}
           path: '${{ matrix.project }}/BuildOutput.txt'
+          if-no-files-found: ignore
+
+      - name: Publish artifacts - container event log
+        uses: actions/upload-artifact@v3
+        if: (failure()) && (hashFiles(format('{0}/ContainerEventLog.evtx',matrix.project)) != '')
+        with:
+          name: ${{ env.ContainerEventLogArtifactsName }}
+          path: '${{ matrix.project }}/ContainerEventLog.evtx'
           if-no-files-found: ignore
 
       - name: Publish artifacts - test results
@@ -840,17 +900,25 @@ jobs:
             });
 
       - name: Checkout
+        if: github.event_name != 'workflow_run' || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository)
         uses: actions/checkout@v3
         with:
           lfs: true
+
+      - name: Checkout Pull Request
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository
+        uses: actions/checkout@v2
+        with:
+          lfs: true
+          ref: ${{ github.event.workflow_run.head_branch }}
 
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
 
-      - name: 'Download Pull Request Changes'
-        if: github.event_name == 'workflow_run'
+      - name: Download Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         uses: actions/github-script@v6
         with:
           script: |
@@ -872,8 +940,8 @@ jobs:
             var fs = require('fs');
             fs.writeFileSync('.PullRequestChanges.zip', Buffer.from(download.data));
 
-      - name: Apply Pull Request Changes
-        if: github.event_name == 'workflow_run'
+      - name: Apply Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         run: |
           $ErrorActionPreference = "STOP"
           $location = (Get-Location).path
@@ -890,10 +958,8 @@ jobs:
             $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
             $extension = [System.IO.Path]::GetExtension($path)
             $filename = [System.IO.Path]::GetFileName($path)
-            if ('${{ github.event.workflow_run.head_repository.full_name }}' -ne $ENV:GITHUB_REPOSITORY) {
-              if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
-                throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
-              }
+            if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
+              throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
             }
             if ($deleteFile) {
               if (Test-Path $newPath) {
@@ -912,6 +978,7 @@ jobs:
               Copy-Item $path -Destination $newFolder -Force
             }
           }
+          Remove-Item -Path $prfolder -recurse -force
 
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
@@ -945,17 +1012,24 @@ jobs:
           $ErrorActionPreference = "STOP"
           $settings = '${{ env.Settings }}' | ConvertFrom-Json
           $project = '${{ matrix.project }}'
+          if ("$ENV:GITHUB_EVENT_NAME" -eq 'workflow_run') {
+            $event = Get-Content $ENV:GITHUB_EVENT_PATH -Encoding UTF8 | ConvertFrom-Json
+            $ref = "PR$($event.workflow_run.pull_requests[0].number)"
+          }
+          else {
+            $ref = "$ENV:GITHUB_REF_NAME".Replace('/','_')
+          }
           if ($project -eq ".") { $project = $settings.RepoName }
-          'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput' | ForEach-Object {
+          'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$("$ENV:GITHUB_REF_NAME".Replace('/','_'))-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
+            $value = "$($project.Replace('\','_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
 
       - name: Publish artifacts - apps
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.appsArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/Apps/'
@@ -963,7 +1037,7 @@ jobs:
 
       - name: Publish artifacts - dependencies
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.dependenciesArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/Dependencies/'
@@ -971,7 +1045,7 @@ jobs:
 
       - name: Publish artifacts - test apps
         uses: actions/upload-artifact@v3
-        if: (github.event_name != 'workflow_run') && (github.ref_name == 'main' || startswith(github.ref_name, 'release/'))
+        if: github.ref_name == 'main' || startswith(github.ref_name, 'release/')
         with:
           name: ${{ env.testAppsArtifactsName }}
           path: '${{ matrix.project }}/.buildartifacts/TestApps/'
@@ -983,6 +1057,14 @@ jobs:
         with:
           name: ${{ env.buildOutputArtifactsName }}
           path: '${{ matrix.project }}/BuildOutput.txt'
+          if-no-files-found: ignore
+
+      - name: Publish artifacts - container event log
+        uses: actions/upload-artifact@v3
+        if: (failure()) && (hashFiles(format('{0}/ContainerEventLog.evtx',matrix.project)) != '')
+        with:
+          name: ${{ env.ContainerEventLogArtifactsName }}
+          path: '${{ matrix.project }}/ContainerEventLog.evtx'
           if-no-files-found: ignore
 
       - name: Publish artifacts - test results
