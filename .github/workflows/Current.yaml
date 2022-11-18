@@ -102,9 +102,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
+      - name: Download cache
+        uses: actions/cache@v3
         with:
+          key: ${{ github.run_id }}
           path: '${{ github.workspace }}\.dependencies'
 
       - name: Read settings
@@ -145,6 +146,11 @@ jobs:
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
+
+      - name: Copy to cache
+        run: |
+          Copy-Item -path '${{ matrix.project }}/.buildartifacts/Apps/*' -Destination '.dependencies' -recurse -force
+          Copy-Item -path '${{ matrix.project }}/.buildartifacts/TestApps/*' -Destination '.dependencies' -recurse -force
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3
@@ -202,9 +208,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
+      - name: Download cache
+        uses: actions/cache@v3
         with:
+          key: ${{ github.run_id }}
           path: '${{ github.workspace }}\.dependencies'
 
       - name: Read settings
@@ -245,6 +252,11 @@ jobs:
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
+
+      - name: Copy to cache
+        run: |
+          Copy-Item -path '${{ matrix.project }}/.buildartifacts/Apps/*' -Destination '.dependencies' -recurse -force
+          Copy-Item -path '${{ matrix.project }}/.buildartifacts/TestApps/*' -Destination '.dependencies' -recurse -force
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3
@@ -302,9 +314,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
+      - name: Download cache
+        uses: actions/cache@v3
         with:
+          key: ${{ github.run_id }}
           path: '${{ github.workspace }}\.dependencies'
 
       - name: Read settings
@@ -345,6 +358,11 @@ jobs:
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
+
+      - name: Copy to cache
+        run: |
+          Copy-Item -path '${{ matrix.project }}/.buildartifacts/Apps/*' -Destination '.dependencies' -recurse -force
+          Copy-Item -path '${{ matrix.project }}/.buildartifacts/TestApps/*' -Destination '.dependencies' -recurse -force
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3
