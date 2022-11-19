@@ -133,6 +133,24 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
+      - name: Publish thisbuild artifacts - apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-Apps'
+          path: '${{ matrix.project }}/.buildartifacts/Apps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Publish thisbuild artifacts - test apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-TestApps'
+          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
       - name: Calculate Artifact names
         id: calculateArtifactNames
         if: success() || failure()
@@ -147,23 +165,6 @@ jobs:
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
-
-      - name: Publish project artifacts - apps
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'thisbuild-${{ matrix.project }}-Apps'
-          path: '${{ matrix.project }}/.buildartifacts/Apps/'
-          if-no-files-found: ignore
-          retention-days: 1
-
-      - name: Publish project artifacts - test apps
-        if: env.WorkflowDepth > 1
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'thisbuild-${{ matrix.project }}-TestApps'
-          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
-          if-no-files-found: ignore
-          retention-days: 1
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3
@@ -259,6 +260,24 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
+      - name: Publish thisbuild artifacts - apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-Apps'
+          path: '${{ matrix.project }}/.buildartifacts/Apps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Publish thisbuild artifacts - test apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-TestApps'
+          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
       - name: Calculate Artifact names
         id: calculateArtifactNames
         if: success() || failure()
@@ -273,23 +292,6 @@ jobs:
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
-
-      - name: Publish project artifacts - apps
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'thisbuild-${{ matrix.project }}-Apps'
-          path: '${{ matrix.project }}/.buildartifacts/Apps/'
-          if-no-files-found: ignore
-          retention-days: 1
-
-      - name: Publish project artifacts - test apps
-        if: env.WorkflowDepth > 1
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'thisbuild-${{ matrix.project }}-TestApps'
-          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
-          if-no-files-found: ignore
-          retention-days: 1
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3
@@ -385,6 +387,24 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
+      - name: Publish thisbuild artifacts - apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-Apps'
+          path: '${{ matrix.project }}/.buildartifacts/Apps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Publish thisbuild artifacts - test apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-TestApps'
+          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
       - name: Calculate Artifact names
         id: calculateArtifactNames
         if: success() || failure()
@@ -399,23 +419,6 @@ jobs:
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
-
-      - name: Publish project artifacts - apps
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'thisbuild-${{ matrix.project }}-Apps'
-          path: '${{ matrix.project }}/.buildartifacts/Apps/'
-          if-no-files-found: ignore
-          retention-days: 1
-
-      - name: Publish project artifacts - test apps
-        if: env.WorkflowDepth > 1
-        uses: actions/upload-artifact@v3
-        with:
-          name: 'thisbuild-${{ matrix.project }}-TestApps'
-          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
-          if-no-files-found: ignore
-          retention-days: 1
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3

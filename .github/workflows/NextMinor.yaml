@@ -10,11 +10,12 @@ defaults:
   run:
     shell: PowerShell
 
+env:
+  workflowDepth: 3
+
 jobs:
   Initialization:
     runs-on: [ windows-latest ]
-    env:
-      workflowDepth: 3
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
       settings: ${{ steps.ReadSettings.outputs.SettingsJson }}
@@ -103,6 +104,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download artifacts
+        if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
@@ -130,6 +132,24 @@ jobs:
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
+
+      - name: Publish thisbuild artifacts - apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-Apps'
+          path: '${{ matrix.project }}/.buildartifacts/Apps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Publish thisbuild artifacts - test apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-TestApps'
+          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Calculate Artifact names
         id: calculateArtifactNames
@@ -211,6 +231,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download artifacts
+        if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
@@ -238,6 +259,24 @@ jobs:
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
+
+      - name: Publish thisbuild artifacts - apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-Apps'
+          path: '${{ matrix.project }}/.buildartifacts/Apps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Publish thisbuild artifacts - test apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-TestApps'
+          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Calculate Artifact names
         id: calculateArtifactNames
@@ -319,6 +358,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Download artifacts
+        if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
@@ -346,6 +386,24 @@ jobs:
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
+
+      - name: Publish thisbuild artifacts - apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-Apps'
+          path: '${{ matrix.project }}/.buildartifacts/Apps/'
+          if-no-files-found: ignore
+          retention-days: 1
+
+      - name: Publish thisbuild artifacts - test apps
+        if: env.WorkflowDepth > 1
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'thisbuild-${{ matrix.project }}-TestApps'
+          path: '${{ matrix.project }}/.buildartifacts/TestApps/'
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Calculate Artifact names
         id: calculateArtifactNames
