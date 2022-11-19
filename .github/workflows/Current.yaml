@@ -108,6 +108,14 @@ jobs:
           key: ${{ github.run_id }}
           path: '${{ github.workspace }}\.dependencies'
 
+      - name: Check Cache
+        run: |
+          $path = '${{ github.workspace }}\.dependencies'
+          if (!(Test-Path -path $path)) {
+            New-Item $path -ItemType Directory | Out-Null
+          }
+          get-childitem $path -Recurse | Out-Host
+
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
@@ -151,6 +159,8 @@ jobs:
         run: |
           Copy-Item -path '${{ matrix.project }}/.buildartifacts/Apps/*' -Destination '.dependencies' -recurse -force
           Copy-Item -path '${{ matrix.project }}/.buildartifacts/TestApps/*' -Destination '.dependencies' -recurse -force
+          $path = '${{ github.workspace }}\.dependencies'
+          get-childitem $path -Recurse | Out-Host
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3
@@ -222,6 +232,14 @@ jobs:
           key: ${{ github.run_id }}
           path: '${{ github.workspace }}\.dependencies'
 
+      - name: Check Cache
+        run: |
+          $path = '${{ github.workspace }}\.dependencies'
+          if (!(Test-Path -path $path)) {
+            New-Item $path -ItemType Directory | Out-Null
+          }
+          get-childitem $path -Recurse | Out-Host
+
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
@@ -265,6 +283,8 @@ jobs:
         run: |
           Copy-Item -path '${{ matrix.project }}/.buildartifacts/Apps/*' -Destination '.dependencies' -recurse -force
           Copy-Item -path '${{ matrix.project }}/.buildartifacts/TestApps/*' -Destination '.dependencies' -recurse -force
+          $path = '${{ github.workspace }}\.dependencies'
+          get-childitem $path -Recurse | Out-Host
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3
@@ -336,6 +356,14 @@ jobs:
           key: ${{ github.run_id }}
           path: '${{ github.workspace }}\.dependencies'
 
+      - name: Check Cache
+        run: |
+          $path = '${{ github.workspace }}\.dependencies'
+          if (!(Test-Path -path $path)) {
+            New-Item $path -ItemType Directory | Out-Null
+          }
+          get-childitem $path -Recurse | Out-Host
+
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
@@ -379,6 +407,8 @@ jobs:
         run: |
           Copy-Item -path '${{ matrix.project }}/.buildartifacts/Apps/*' -Destination '.dependencies' -recurse -force
           Copy-Item -path '${{ matrix.project }}/.buildartifacts/TestApps/*' -Destination '.dependencies' -recurse -force
+          $path = '${{ github.workspace }}\.dependencies'
+          get-childitem $path -Recurse | Out-Host
 
       - name: Publish artifacts - build output
         uses: actions/upload-artifact@v3
