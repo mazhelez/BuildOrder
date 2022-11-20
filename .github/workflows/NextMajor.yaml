@@ -103,7 +103,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download artifacts
+      - name: Download thisbuild artifacts
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
@@ -133,7 +133,7 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
-      - name: Publish thisbuild artifacts - apps
+      - name: Upload thisbuild artifacts - apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -142,7 +142,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: Publish thisbuild artifacts - test apps
+      - name: Upload thisbuild artifacts - test apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -230,7 +230,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download artifacts
+      - name: Download thisbuild artifacts
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
@@ -260,7 +260,7 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
-      - name: Publish thisbuild artifacts - apps
+      - name: Upload thisbuild artifacts - apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -269,7 +269,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: Publish thisbuild artifacts - test apps
+      - name: Upload thisbuild artifacts - test apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -357,7 +357,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Download artifacts
+      - name: Download thisbuild artifacts
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
@@ -387,7 +387,7 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
-      - name: Publish thisbuild artifacts - apps
+      - name: Upload thisbuild artifacts - apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -396,7 +396,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: Publish thisbuild artifacts - test apps
+      - name: Upload thisbuild artifacts - test apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:

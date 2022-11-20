@@ -21,10 +21,6 @@ permissions:
   pull-requests: write
   checks: write
 
-concurrency:
-  group: 'cicd-${{ github.ref }}-${{ github.event.workflow_run.head_repository.full_name }}/${{ github.event.workflow_run.head_branch }}'
-  cancel-in-progress: true
-
 defaults:
   run:
     shell: PowerShell
@@ -34,6 +30,7 @@ env:
 
 jobs:
   Initialization:
+    if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
     runs-on: [ windows-latest ]
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -78,65 +75,81 @@ jobs:
             });
             core.setOutput('checkRunId', response.data.id);
 
-      - name: Dump Workflow info
-        run: |
-          Write-Host 'Concurrency ID: cicd-${{ github.ref }}-${{ github.event.workflow_run.head_repository.full_name }}/${{ github.event.workflow_run.head_branch }}'
-          Write-Host 'github.event_name: ${{ github.event_name }}'
-          Write-Host 'github.event.workflow_run.head_repository.full_name: ${{ github.event.workflow_run.head_repository.full_name }}'
-          Write-Host 'github.repository: ${{ github.repository }}'
-          Write-Host 'github.ref: ${{ github.ref }}'
-
-      - name: Investigate Fork Pull Request
-        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
-        env:
-          event: ${{ toJson( github.event ) }}
-        run: |
-          $errorActionPreference = 'STOP'
-          $event = $ENV:EVENT | ConvertFrom-Json
-          $headers = @{             
-              "Authorization" = 'token ${{ secrets.GITHUB_TOKEN }}'
-              "Accept" = "application/vnd.github.baptiste-preview+json"
-          }
-          if ($event.workflow_run.pull_requests.Count -gt 1) {
-            throw "Multiple PRs in the same workflow_run isn't supported by CI/CD workflow yet"
-          }
-          if ($event.workflow_run.pull_requests.Count -eq 0) {
-            throw "No PRs to investigate"
-          }
-          $event.workflow_run.pull_requests | ForEach-Object {
-            $url = "$($ENV:GITHUB_API_URL)/repos/$($ENV:GITHUB_REPOSITORY)/compare/$($_.base.SHA)...$($_.head.SHA)"
-            $response = Invoke-WebRequest -UseBasicParsing -Headers $headers -Uri $url | ConvertFrom-Json
-            Write-Host "Files Changed:"
-            $response.files | ForEach-Object {
-              $path = $_.filename
-              $status = $_.status
-              $extension = [System.IO.Path]::GetExtension($path)
-              $filename = [System.IO.Path]::GetFileName($path)
-              Write-Host "- $path $status"
-              if ($path -like ".github\workflows\*.yaml" -or $path -like ".github\workflows\*.yml") {
-                throw "Changes to workflows are not allowed form a fork"
-              }
-              if ($filename -eq "CODEOWNERS") {
-                throw "Changes to CODEOWNERS are not allowed form a fork"
-              }
-              if ($path -eq ".AL-Go\*.ps1" -or $path -eq "*\.AL-Go\*.ps1" -or $path -eq ".github\*.ps1") {
-                throw "Changes to build system PowerShell scripts are not allowed"
-              }
-            }
-          }
-
       - name: Checkout
-        if: github.event_name != 'workflow_run'
+        if: github.event_name != 'workflow_run' || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository)
         uses: actions/checkout@v3
         with:
           lfs: true
     
       - name: Checkout Pull Request
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository
         uses: actions/checkout@v3
         with:
           lfs: true
           ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: Download Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
+        uses: actions/github-script@v6
+        with:
+          script: |
+            var run_id = Number('${{ github.event.workflow_run.id }}');
+            var artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: run_id
+            });
+            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == 'Pull_Request_Files'
+            })[0];
+            var download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip'
+            });
+            var fs = require('fs');
+            fs.writeFileSync('.PullRequestChanges.zip', Buffer.from(download.data));
+
+      - name: Apply Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
+        run: |
+          $ErrorActionPreference = "STOP"
+          $location = (Get-Location).path
+          $prfolder = '.PullRequestChanges'
+          Expand-Archive -Path ".\$prfolder.zip" -DestinationPath ".\$prfolder"
+          Remove-Item -Path ".\$prfolder.zip" -force
+          Get-ChildItem -Path $prfolder -Recurse -File | ForEach-Object {
+            $path = $_.FullName
+            $deleteFile = $path.EndsWith('.REMOVE')
+            if ($deleteFile) {
+              $path = $path.SubString(0,$path.Length-7)
+            }
+            $newPath = $path.Replace("$prfolder\","")
+            $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
+            $extension = [System.IO.Path]::GetExtension($path)
+            $filename = [System.IO.Path]::GetFileName($path)
+            if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
+              throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
+            }
+            if ($deleteFile) {
+              if (Test-Path $newPath) {
+                Write-Host "Removing $newPath"
+                Remove-Item $newPath -Force
+              }
+              else {
+                Write-Host "$newPath was already deleted"
+              }
+            }
+            else {
+              if (-not (Test-Path $newFolder)) {
+                New-Item $newFolder -ItemType Directory | Out-Null
+              }
+              Write-Host "Copying $path to $newFolder"
+              Copy-Item $path -Destination $newFolder -Force
+            }
+          }
+          Remove-Item -Path $prfolder -recurse -force
 
       - name: Initialize the workflow
         id: init
@@ -314,23 +327,86 @@ jobs:
             });
 
       - name: Checkout
-        if: github.event_name != 'workflow_run'
+        if: github.event_name != 'workflow_run' || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository)
         uses: actions/checkout@v3
         with:
           lfs: true
-    
+
       - name: Checkout Pull Request
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository
         uses: actions/checkout@v3
         with:
           lfs: true
           ref: ${{ github.event.workflow_run.head_branch }}
 
-      - name: Download artifacts
+      - name: Download thisbuild artifacts
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
+
+      - name: Download Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
+        uses: actions/github-script@v6
+        with:
+          script: |
+            var run_id = Number('${{ github.event.workflow_run.id }}');
+            var artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: run_id
+            });
+            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == 'Pull_Request_Files'
+            })[0];
+            var download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip'
+            });
+            var fs = require('fs');
+            fs.writeFileSync('.PullRequestChanges.zip', Buffer.from(download.data));
+
+      - name: Apply Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
+        run: |
+          $ErrorActionPreference = "STOP"
+          $location = (Get-Location).path
+          $prfolder = '.PullRequestChanges'
+          Expand-Archive -Path ".\$prfolder.zip" -DestinationPath ".\$prfolder"
+          Remove-Item -Path ".\$prfolder.zip" -force
+          Get-ChildItem -Path $prfolder -Recurse -File | ForEach-Object {
+            $path = $_.FullName
+            $deleteFile = $path.EndsWith('.REMOVE')
+            if ($deleteFile) {
+              $path = $path.SubString(0,$path.Length-7)
+            }
+            $newPath = $path.Replace("$prfolder\","")
+            $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
+            $extension = [System.IO.Path]::GetExtension($path)
+            $filename = [System.IO.Path]::GetFileName($path)
+            if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
+              throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
+            }
+            if ($deleteFile) {
+              if (Test-Path $newPath) {
+                Write-Host "Removing $newPath"
+                Remove-Item $newPath -Force
+              }
+              else {
+                Write-Host "$newPath was already deleted"
+              }
+            }
+            else {
+              if (-not (Test-Path $newFolder)) {
+                New-Item $newFolder -ItemType Directory | Out-Null
+              }
+              Write-Host "Copying $path to $newFolder"
+              Copy-Item $path -Destination $newFolder -Force
+            }
+          }
+          Remove-Item -Path $prfolder -recurse -force
 
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
@@ -357,7 +433,7 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
-      - name: Publish thisbuild artifacts - apps
+      - name: Upload thisbuild artifacts - apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -366,7 +442,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: Publish thisbuild artifacts - test apps
+      - name: Upload thisbuild artifacts - test apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -555,23 +631,86 @@ jobs:
             });
 
       - name: Checkout
-        if: github.event_name != 'workflow_run'
+        if: github.event_name != 'workflow_run' || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository)
         uses: actions/checkout@v3
         with:
           lfs: true
-    
+
       - name: Checkout Pull Request
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository
         uses: actions/checkout@v3
         with:
           lfs: true
           ref: ${{ github.event.workflow_run.head_branch }}
 
-      - name: Download artifacts
+      - name: Download thisbuild artifacts
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
+
+      - name: Download Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
+        uses: actions/github-script@v6
+        with:
+          script: |
+            var run_id = Number('${{ github.event.workflow_run.id }}');
+            var artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: run_id
+            });
+            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == 'Pull_Request_Files'
+            })[0];
+            var download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip'
+            });
+            var fs = require('fs');
+            fs.writeFileSync('.PullRequestChanges.zip', Buffer.from(download.data));
+
+      - name: Apply Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
+        run: |
+          $ErrorActionPreference = "STOP"
+          $location = (Get-Location).path
+          $prfolder = '.PullRequestChanges'
+          Expand-Archive -Path ".\$prfolder.zip" -DestinationPath ".\$prfolder"
+          Remove-Item -Path ".\$prfolder.zip" -force
+          Get-ChildItem -Path $prfolder -Recurse -File | ForEach-Object {
+            $path = $_.FullName
+            $deleteFile = $path.EndsWith('.REMOVE')
+            if ($deleteFile) {
+              $path = $path.SubString(0,$path.Length-7)
+            }
+            $newPath = $path.Replace("$prfolder\","")
+            $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
+            $extension = [System.IO.Path]::GetExtension($path)
+            $filename = [System.IO.Path]::GetFileName($path)
+            if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
+              throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
+            }
+            if ($deleteFile) {
+              if (Test-Path $newPath) {
+                Write-Host "Removing $newPath"
+                Remove-Item $newPath -Force
+              }
+              else {
+                Write-Host "$newPath was already deleted"
+              }
+            }
+            else {
+              if (-not (Test-Path $newFolder)) {
+                New-Item $newFolder -ItemType Directory | Out-Null
+              }
+              Write-Host "Copying $path to $newFolder"
+              Copy-Item $path -Destination $newFolder -Force
+            }
+          }
+          Remove-Item -Path $prfolder -recurse -force
 
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
@@ -598,7 +737,7 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
-      - name: Publish thisbuild artifacts - apps
+      - name: Upload thisbuild artifacts - apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -607,7 +746,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: Publish thisbuild artifacts - test apps
+      - name: Upload thisbuild artifacts - test apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -796,23 +935,86 @@ jobs:
             });
 
       - name: Checkout
-        if: github.event_name != 'workflow_run'
+        if: github.event_name != 'workflow_run' || (github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository)
         uses: actions/checkout@v3
         with:
           lfs: true
-    
+
       - name: Checkout Pull Request
-        if: github.event_name == 'workflow_run'
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name == github.repository
         uses: actions/checkout@v3
         with:
           lfs: true
           ref: ${{ github.event.workflow_run.head_branch }}
 
-      - name: Download artifacts
+      - name: Download thisbuild artifacts
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
           path: '${{ github.workspace }}\.dependencies'
+
+      - name: Download Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
+        uses: actions/github-script@v6
+        with:
+          script: |
+            var run_id = Number('${{ github.event.workflow_run.id }}');
+            var artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: run_id
+            });
+            var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+              return artifact.name == 'Pull_Request_Files'
+            })[0];
+            var download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: matchArtifact.id,
+               archive_format: 'zip'
+            });
+            var fs = require('fs');
+            fs.writeFileSync('.PullRequestChanges.zip', Buffer.from(download.data));
+
+      - name: Apply Fork Pull Request Changes
+        if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
+        run: |
+          $ErrorActionPreference = "STOP"
+          $location = (Get-Location).path
+          $prfolder = '.PullRequestChanges'
+          Expand-Archive -Path ".\$prfolder.zip" -DestinationPath ".\$prfolder"
+          Remove-Item -Path ".\$prfolder.zip" -force
+          Get-ChildItem -Path $prfolder -Recurse -File | ForEach-Object {
+            $path = $_.FullName
+            $deleteFile = $path.EndsWith('.REMOVE')
+            if ($deleteFile) {
+              $path = $path.SubString(0,$path.Length-7)
+            }
+            $newPath = $path.Replace("$prfolder\","")
+            $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
+            $extension = [System.IO.Path]::GetExtension($path)
+            $filename = [System.IO.Path]::GetFileName($path)
+            if ($extension -eq '.ps1' -or $extension -eq '.yaml' -or $extension -eq '.yml' -or $filename -eq "CODEOWNERS") {
+              throw "Pull Request containing changes to scripts, workflows or CODEOWNERS are not allowed from forks."
+            }
+            if ($deleteFile) {
+              if (Test-Path $newPath) {
+                Write-Host "Removing $newPath"
+                Remove-Item $newPath -Force
+              }
+              else {
+                Write-Host "$newPath was already deleted"
+              }
+            }
+            else {
+              if (-not (Test-Path $newFolder)) {
+                New-Item $newFolder -ItemType Directory | Out-Null
+              }
+              Write-Host "Copying $path to $newFolder"
+              Copy-Item $path -Destination $newFolder -Force
+            }
+          }
+          Remove-Item -Path $prfolder -recurse -force
 
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
@@ -839,7 +1041,7 @@ jobs:
           settingsJson: ${{ env.Settings }}
           SecretsJson: ${{ env.RepoSecrets }}
 
-      - name: Publish thisbuild artifacts - apps
+      - name: Upload thisbuild artifacts - apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
@@ -848,7 +1050,7 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
-      - name: Publish thisbuild artifacts - test apps
+      - name: Upload thisbuild artifacts - test apps
         if: env.WorkflowDepth > 1
         uses: actions/upload-artifact@v3
         with:
