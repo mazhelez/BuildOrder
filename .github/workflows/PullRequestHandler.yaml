@@ -19,6 +19,6 @@ jobs:
   PullRequestHandler:
     runs-on: [ windows-latest ]
     steps:
-      - name: Wait for CI/CD to start
+      - name: Start CI/CD workflow
         run: |
-          Start-Sleep -seconds 50
+          Write-Host "CI/CD workflow will start upon completion of this workflow"

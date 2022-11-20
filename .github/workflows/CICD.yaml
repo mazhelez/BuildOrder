@@ -5,7 +5,7 @@ on:
   workflow_run:
     workflows: ["Pull Request Handler"]
     types:
-      - requested
+      - completed
   push:
     paths-ignore:
       - '**.md'
@@ -86,7 +86,7 @@ jobs:
           Write-Host 'github.repository: ${{ github.repository }}'
           Write-Host 'github.ref: ${{ github.ref }}'
 
-      - name: Investigate Pull Request
+      - name: Investigate Fork Pull Request
         if: github.event_name == 'workflow_run' && github.event.workflow_run.head_repository.full_name != github.repository
         env:
           event: ${{ toJson( github.event ) }}
@@ -99,6 +99,9 @@ jobs:
           }
           if ($event.workflow_run.pull_requests.Count -gt 1) {
             throw "Multiple PRs in the same workflow_run isn't supported by CI/CD workflow yet"
+          }
+          if ($event.workflow_run.pull_requests.Count -eq 0) {
+            throw "No PRs to investigate"
           }
           $event.workflow_run.pull_requests | ForEach-Object {
             $url = "$($ENV:GITHUB_API_URL)/repos/$($ENV:GITHUB_REPOSITORY)/compare/$($_.base.SHA)...$($_.head.SHA)"
