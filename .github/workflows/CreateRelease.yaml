@@ -110,11 +110,21 @@ jobs:
                 "Authorization" = "token ${{ github.token }}"
                 "Accept"        = "application/json"
             }
-            $allArtifacts = Invoke-WebRequest -UseBasicParsing -Headers $headers -Uri "$($ENV:GITHUB_API_URL)/repos/$($ENV:GITHUB_REPOSITORY)/actions/artifacts" | ConvertFrom-Json
-            $artifactsVersion = $appVersion
+            $allArtifacts = Invoke-WebRequest -UseBasicParsing -Headers $headers -Uri "$($ENV:GITHUB_API_URL)/repos/$($ENV:GITHUB_REPOSITORY)/actions/artifacts?per_page=100" | ConvertFrom-Json
             if ($appVersion -eq "latest") {
+              Write-Host "Grab latest"
               $artifact = $allArtifacts.artifacts | Where-Object { $_.name -like "$project-$refname-Apps-*" } | Select-Object -First 1
+            }
+            else {
+              Write-Host "Search for $project-$refname-Apps-$appVersion"
+              $artifact = $allArtifacts.artifacts | Where-Object { $_.name -eq "$project-$refname-Apps-$appVersion" } | Select-Object -First 1
+            }
+            if ($artifact) {
               $artifactsVersion = $artifact.name.SubString($artifact.name.LastIndexOf('-Apps-')+6)
+            }
+            else {
+              Write-Host "::Error::No artifacts found for this project"
+              exit 1
             }
             $artifact | out-host
             if ($sha) {
