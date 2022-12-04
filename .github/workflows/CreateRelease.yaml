@@ -95,6 +95,15 @@ jobs:
           $projects | out-host
           $include = @()
           $sha = ''
+          $allArtifacts = @()
+          $page = 1
+          do {
+            $repoArtifacts = Invoke-WebRequest -UseBasicParsing -Headers $headers -Uri "$($ENV:GITHUB_API_URL)/repos/$($ENV:GITHUB_REPOSITORY)/actions/artifacts?per_page=100&page=$page" | ConvertFrom-Json
+            $allArtifacts += $repoArtifacts.Artifacts
+            $page++
+          while ($repoArtifacts.Artifacts.Count -gt 0)
+          Write-Host "Repo Artifacts count: $($repoArtifacts.total_count)"
+          Write-Host "Artifacts count: $($allArtifacts.Count)"
           $projects | ForEach-Object {
             $thisProject = $_
             if ($thisProject -and ($thisProject -ne '.')) {
@@ -110,15 +119,13 @@ jobs:
                 "Authorization" = "token ${{ github.token }}"
                 "Accept"        = "application/json"
             }
-            $allArtifacts = Invoke-WebRequest -UseBasicParsing -Headers $headers -Uri "$($ENV:GITHUB_API_URL)/repos/$($ENV:GITHUB_REPOSITORY)/actions/artifacts?per_page=100" | ConvertFrom-Json
-            Write-Host "Total count: $($allArtifacts.total_count)"
             if ($appVersion -eq "latest") {
               Write-Host "Grab latest"
-              $artifact = $allArtifacts.artifacts | Where-Object { $_.name -like "$project-$refname-Apps-*" } | Select-Object -First 1
+              $artifact = $allArtifacts | Where-Object { $_.name -like "$project-$refname-Apps-*" } | Select-Object -First 1
             }
             else {
               Write-Host "Search for $project-$refname-Apps-$appVersion"
-              $artifact = $allArtifacts.artifacts | Where-Object { $_.name -eq "$project-$refname-Apps-$appVersion" } | Select-Object -First 1
+              $artifact = $allArtifacts | Where-Object { $_.name -eq "$project-$refname-Apps-$appVersion" } | Select-Object -First 1
             }
             if ($artifact) {
               $artifactsVersion = $artifact.name.SubString($artifact.name.LastIndexOf('-Apps-')+6)
@@ -138,7 +145,7 @@ jobs:
               $sha = $artifact.workflow_run.head_sha
             }
 
-            $allArtifacts.artifacts | Where-Object { ($_.name -like "$project-$refname-Apps-$($artifactsVersion)" -or $_.name -like "$project-$refname-TestApps-$($artifactsVersion)" -or $_.name -like "$project-$refname-Dependencies-$($artifactsVersion)") } | ForEach-Object {
+            $allArtifacts | Where-Object { ($_.name -like "$project-$refname-Apps-$($artifactsVersion)" -or $_.name -like "$project-$refname-TestApps-$($artifactsVersion)" -or $_.name -like "$project-$refname-Dependencies-$($artifactsVersion)") } | ForEach-Object {
               $atype = $_.name.SubString(0,$_.name.Length-$artifactsVersion.Length-1)
               $atype = $atype.SubString($atype.LastIndexOf('-')+1)
               $include += $( [ordered]@{ "name" = $_.name; "url" = $_.archive_download_url; "atype" = $atype; "project" = $thisproject } )
