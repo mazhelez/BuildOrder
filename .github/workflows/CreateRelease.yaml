@@ -92,7 +92,8 @@ jobs:
         run: |
           $ErrorActionPreference = "STOP"
           $projects = '${{ steps.ReadSettings.outputs.ProjectsJson }}' | ConvertFrom-Json
-          $projects | out-host
+          Write-Host "Projects:"
+          $projects | ForEach-Object { Write-Host "- $_" }
           $include = @()
           $sha = ''
           $allArtifacts = @()
@@ -104,7 +105,7 @@ jobs:
           }
           while ($repoArtifacts.Artifacts.Count -gt 0)
           Write-Host "Repo Artifacts count: $($repoArtifacts.total_count)"
-          Write-Host "Artifacts count: $($allArtifacts.Count)"
+          Write-Host "Downloaded Artifacts count: $($allArtifacts.Count)"
           $projects | ForEach-Object {
             $thisProject = $_
             if ($thisProject -and ($thisProject -ne '.')) {
