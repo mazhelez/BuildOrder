@@ -48,10 +48,12 @@ defaults:
     shell: PowerShell
 
 jobs:
-  Initialization:
+  CreateRelease:
     runs-on: [ windows-latest ]
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
+      artifacts: ${{ steps.analyzeartifacts.outputs.artifacts }}
+      releaseId: ${{ steps.createrelease.outputs.releaseId }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -62,29 +64,18 @@ jobs:
         with:
           eventId: "DO0094"
 
-  CreateRelease:
-    runs-on: [ windows-latest ]
-    needs: [ Initialization ]
-    outputs:
-      artifacts: ${{ steps.analyzeartifacts.outputs.artifacts }}
-      upload_url: ${{ steps.createrelease.outputs.upload_url }}
-      releaseId: ${{ steps.createrelease.outputs.releaseId }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Read settings
         id: ReadSettings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
-          parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           get: TemplateUrl,RepoName
           getProjects: 'Y'
 
       - name: Check for updates to AL-Go system files
         uses: freddydk/AL-Go-Actions/CheckForUpdates@main
         with:
-          parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           templateUrl: ${{ env.TemplateUrl }}
 
       - name: Analyze Artifacts
@@ -168,7 +159,7 @@ jobs:
         id: createreleasenotes
         uses: freddydk/AL-Go-Actions/CreateReleaseNotes@main
         with:
-          parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           tag_name: ${{ github.event.inputs.tag }}
 
       - name: Create release
@@ -194,8 +185,6 @@ jobs:
               data: { id: releaseId, html_url: htmlUrl, upload_url: uploadUrl }
             } = createReleaseResponse;
             core.setOutput('releaseId', releaseId);
-            core.setOutput('html_url', htmlUrl);
-            core.setOutput('upload_url', uploadUrl);
 
   UploadArtifacts:
     runs-on: [ windows-latest ] 
@@ -210,14 +199,14 @@ jobs:
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
-          parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+          parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
 
       - name: Read secrets
         uses: freddydk/AL-Go-Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
-          parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+          parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
           settingsJson: ${{ env.Settings }}
           secrets: 'NuGetContext,StorageContext'
 
@@ -234,7 +223,6 @@ jobs:
       - name: Upload release artifacts
         uses: actions/github-script@v6
         env:
-          uploadUrl: ${{ needs.createrelease.outputs.upload_url }}
           releaseId: ${{ needs.createrelease.outputs.releaseId }}
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -300,7 +288,7 @@ jobs:
   CreateReleaseBranch:
     if: ${{ github.event.inputs.createReleaseBranch=='Y' }}
     runs-on: [ windows-latest ]
-    needs: [ Initialization, CreateRelease, UploadArtifacts ]
+    needs: [ CreateRelease, UploadArtifacts ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -317,19 +305,19 @@ jobs:
   UpdateVersionNumber:
     if: ${{ github.event.inputs.updateVersionNumber!='' }}
     runs-on: [ windows-latest ]
-    needs: [ Initialization, CreateRelease, UploadArtifacts ]
+    needs: [ CreateRelease, UploadArtifacts ]
     steps:
       - name: Update Version Number
         uses: freddydk/AL-Go-Actions/IncrementVersionNumber@main
         with:
-          parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+          parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
           versionNumber: ${{ github.event.inputs.updateVersionNumber }}
           directCommit: ${{ github.event.inputs.directCommit }}
 
   PostProcess:
     if: always()
     runs-on: [ windows-latest ]
-    needs: [ Initialization, CreateRelease, UploadArtifacts, CreateReleaseBranch, UpdateVersionNumber ]
+    needs: [ CreateRelease, UploadArtifacts, CreateReleaseBranch, UpdateVersionNumber ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -339,4 +327,4 @@ jobs:
         uses: freddydk/AL-Go-Actions/WorkflowPostProcess@main
         with:
           eventId: "DO0094"
-          telemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+          telemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
