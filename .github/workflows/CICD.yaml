@@ -200,7 +200,7 @@ jobs:
             $deliveryTarget = [System.IO.Path]::GetFileNameWithoutExtension($_.Name.SubString($namePrefix.Length))
             $deliveryTargets += @($deliveryTarget)
           }
-          $deliveryTargets = $deliveryTargets | Select-Object -unique | Where-Object {
+          $deliveryTargets = @($deliveryTargets | Select-Object -unique | Where-Object {
             $include = $false
             Write-Host "Check DeliveryTarget $_"
             $contextName = "$($_)Context"
@@ -225,7 +225,7 @@ jobs:
               Write-Host "DeliveryTarget $_ included"
             }
             $include
-          }
+          })
           $deliveryTargetsJson = $deliveryTargets | ConvertTo-Json -Depth 99 -compress
           if ($deliveryTargets.Count -lt 2) { $deliveryTargetsJson = "[$($deliveryTargetsJson)]" }
           Add-Content -Path $env:GITHUB_OUTPUT -Value "DeliveryTargetsJson=$deliveryTargetsJson"
