@@ -23,7 +23,7 @@ permissions:
 
 defaults:
   run:
-    shell: PowerShell
+    shell: pwsh
 
 env:
   workflowDepth: 3
@@ -31,7 +31,7 @@ env:
 jobs:
   Initialization:
     if: github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success'
-    runs-on: [ windows-latest ]
+    runs-on: [ ubuntu-latest ]
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
       settings: ${{ steps.ReadSettings.outputs.SettingsJson }}
@@ -109,17 +109,18 @@ jobs:
           PRREPOFULLNAME: ${{ github.event.workflow_run.head_repository.full_name }}
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $location = (Get-Location).path
           $prfolder = '.PullRequestChanges'
-          Expand-Archive -Path ".\$prfolder.zip" -DestinationPath ".\$prfolder"
-          Remove-Item -Path ".\$prfolder.zip" -force
+          Expand-Archive -Path ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder.zip" -DestinationPath ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder"
+          Remove-Item -Path ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder.zip" -force
           Get-ChildItem -Path $prfolder -Recurse -File | ForEach-Object {
             $path = $_.FullName
             $deleteFile = $path.EndsWith('.REMOVE')
             if ($deleteFile) {
               $path = $path.SubString(0,$path.Length-7)
             }
-            $newPath = $path.Replace("$prfolder\","")
+            $newPath = $path.Replace("$prfolder$([System.IO.Path]::DirectorySeparatorChar)","")
             $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
             $extension = [System.IO.Path]::GetExtension($path)
             $filename = [System.IO.Path]::GetFileName($path)
@@ -151,12 +152,14 @@ jobs:
         id: init
         uses: freddydk/AL-Go-Actions/WorkflowInitialize@main
         with:
+          shell: pwsh
           eventId: "DO0091"
 
       - name: Read settings
         id: ReadSettings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           getProjects: 'Y'
           getEnvironments: '*'
@@ -165,9 +168,10 @@ jobs:
         id: DetermineDeliveryTargetSecrets
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $deliveryTargetSecrets = @('GitHubPackagesContext','NuGetContext','StorageContext','AppSourceContext')
           $namePrefix = 'DeliverTo'
-          Get-Item -Path (Join-Path $ENV:GITHUB_WORKSPACE ".github\$($namePrefix)*.ps1") | ForEach-Object {
+          Get-Item -Path (Join-Path $ENV:GITHUB_WORKSPACE ".github$([System.IO.Path]::DirectorySeparatorChar)$($namePrefix)*.ps1") | ForEach-Object {
             $deliveryTarget = [System.IO.Path]::GetFileNameWithoutExtension($_.Name.SubString($namePrefix.Length))
             $deliveryTargetSecrets += @("$($deliveryTarget)Context")
           }
@@ -178,6 +182,7 @@ jobs:
         env:
           secrets: ${{ toJson(secrets) }}
         with:
+          shell: pwsh
           settingsJson: ${{ env.Settings }}
           secrets: ${{ steps.DetermineDeliveryTargetSecrets.outputs.Secrets }}
 
@@ -185,12 +190,13 @@ jobs:
         id: DetermineDeliveryTargets
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $deliveryTargets = @('GitHubPackages','NuGet','Storage')
           if ($env:type -eq "AppSource App" -and $env:AppSourceContinuousDelivery -eq "true") {
             $deliveryTargets += @("AppSource")
           }
           $namePrefix = 'DeliverTo'
-          Get-Item -Path (Join-Path $ENV:GITHUB_WORKSPACE ".github\$($namePrefix)*.ps1") | ForEach-Object {
+          Get-Item -Path (Join-Path $ENV:GITHUB_WORKSPACE ".github$([System.IO.Path]::DirectorySeparatorChar)$($namePrefix)*.ps1") | ForEach-Object {
             $deliveryTarget = [System.IO.Path]::GetFileNameWithoutExtension($_.Name.SubString($namePrefix.Length))
             $deliveryTargets += @($deliveryTarget)
           }
@@ -200,12 +206,11 @@ jobs:
             $contextName = "$($_)Context"
             $deliveryContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable($contextName)))
             if ($deliveryContext) {
-              Write-Host "Context secret exists"
-              $obj = $deliveryContext | ConvertFrom-Json
-              Write-Host "Context secret is correct json"
-              if ($obj.PSObject.Properties.Name -eq 'branches') {
-                Write-Host "Context secret includes branches: "
-                $obj.branches | ForEach-Object {
+              $settingName = "DeliverTo$_"
+              $settings = $env:Settings | ConvertFrom-Json
+              if (($settings.PSObject.Properties.Name -eq $settingName) -and ($settings."$settingName".PSObject.Properties.Name -eq "Branches")) {
+                Write-Host "Branches:"
+                $settings."$settingName".Branches | ForEach-Object {
                   Write-Host "- $_"
                   if ($ENV:GITHUB_REF_NAME -like $_) {
                     $include = $true
@@ -215,6 +220,9 @@ jobs:
               else {
                 $include = ($ENV:GITHUB_REF_NAME -eq 'main')
               }
+            }
+            if ($include) {
+              Write-Host "DeliveryTarget $_ included"
             }
             $include
           }
@@ -231,6 +239,7 @@ jobs:
         id: BuildOrder
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $projects = '${{ steps.ReadSettings.outputs.ProjectsJson }}' | ConvertFrom-Json
           $buildOrder = '${{ steps.ReadSettings.outputs.BuildOrderJson }}' | ConvertFrom-Json
           $depth = ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
@@ -265,7 +274,7 @@ jobs:
           }
 
   CheckForUpdates:
-    runs-on: [ windows-latest ]
+    runs-on: [ ubuntu-latest ]
     needs: [ Initialization ]
     if: github.event_name != 'workflow_run'
     steps:
@@ -275,12 +284,14 @@ jobs:
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           get: TemplateUrl
 
       - name: Check for updates to AL-Go system files
         uses: freddydk/AL-Go-Actions/CheckForUpdates@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           templateUrl: ${{ env.TemplateUrl }}
 
@@ -357,7 +368,7 @@ jobs:
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
-          path: '${{ github.workspace }}\.dependencies'
+          path: '.dependencies'
 
       - name: Download Pull Request Changes
         if: github.event_name == 'workflow_run'
@@ -388,17 +399,18 @@ jobs:
           PRREPOFULLNAME: ${{ github.event.workflow_run.head_repository.full_name }}
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $location = (Get-Location).path
           $prfolder = '.PullRequestChanges'
-          Expand-Archive -Path ".\$prfolder.zip" -DestinationPath ".\$prfolder"
-          Remove-Item -Path ".\$prfolder.zip" -force
+          Expand-Archive -Path ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder.zip" -DestinationPath ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder"
+          Remove-Item -Path ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder.zip" -force
           Get-ChildItem -Path $prfolder -Recurse -File | ForEach-Object {
             $path = $_.FullName
             $deleteFile = $path.EndsWith('.REMOVE')
             if ($deleteFile) {
               $path = $path.SubString(0,$path.Length-7)
             }
-            $newPath = $path.Replace("$prfolder\","")
+            $newPath = $path.Replace("$prfolder$([System.IO.Path]::DirectorySeparatorChar)","")
             $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
             $extension = [System.IO.Path]::GetExtension($path)
             $filename = [System.IO.Path]::GetFileName($path)
@@ -429,6 +441,7 @@ jobs:
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
@@ -437,6 +450,7 @@ jobs:
         env:
           secrets: ${{ toJson(secrets) }}
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           settingsJson: ${{ env.Settings }}
           secrets: 'licenseFileUrl,insiderSasToken,CodeSignCertificateUrl,CodeSignCertificatePassword,KeyVaultCertificateUrl,KeyVaultCertificatePassword,KeyVaultClientId,StorageContext,GitHubPackagesContext'
@@ -445,6 +459,7 @@ jobs:
         id: RunPipeline
         uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
@@ -474,6 +489,7 @@ jobs:
         if: success() || failure()
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $settings = '${{ env.Settings }}' | ConvertFrom-Json
           $project = '${{ matrix.project }}'
           if ("$ENV:GITHUB_EVENT_NAME" -eq 'workflow_run') {
@@ -486,7 +502,7 @@ jobs:
           if ($project -eq ".") { $project = $settings.RepoName }
           'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
+            $value = "$($project.Replace("$([System.IO.Path]::DirectorySeparatorChar)",'_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
@@ -552,6 +568,7 @@ jobs:
         if: success() || failure()
         uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -581,6 +598,7 @@ jobs:
         if: always()
         uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -657,7 +675,7 @@ jobs:
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
-          path: '${{ github.workspace }}\.dependencies'
+          path: '.dependencies'
 
       - name: Download Pull Request Changes
         if: github.event_name == 'workflow_run'
@@ -688,17 +706,18 @@ jobs:
           PRREPOFULLNAME: ${{ github.event.workflow_run.head_repository.full_name }}
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $location = (Get-Location).path
           $prfolder = '.PullRequestChanges'
-          Expand-Archive -Path ".\$prfolder.zip" -DestinationPath ".\$prfolder"
-          Remove-Item -Path ".\$prfolder.zip" -force
+          Expand-Archive -Path ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder.zip" -DestinationPath ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder"
+          Remove-Item -Path ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder.zip" -force
           Get-ChildItem -Path $prfolder -Recurse -File | ForEach-Object {
             $path = $_.FullName
             $deleteFile = $path.EndsWith('.REMOVE')
             if ($deleteFile) {
               $path = $path.SubString(0,$path.Length-7)
             }
-            $newPath = $path.Replace("$prfolder\","")
+            $newPath = $path.Replace("$prfolder$([System.IO.Path]::DirectorySeparatorChar)","")
             $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
             $extension = [System.IO.Path]::GetExtension($path)
             $filename = [System.IO.Path]::GetFileName($path)
@@ -729,6 +748,7 @@ jobs:
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
@@ -737,6 +757,7 @@ jobs:
         env:
           secrets: ${{ toJson(secrets) }}
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           settingsJson: ${{ env.Settings }}
           secrets: 'licenseFileUrl,insiderSasToken,CodeSignCertificateUrl,CodeSignCertificatePassword,KeyVaultCertificateUrl,KeyVaultCertificatePassword,KeyVaultClientId,StorageContext,GitHubPackagesContext'
@@ -745,6 +766,7 @@ jobs:
         id: RunPipeline
         uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
@@ -774,6 +796,7 @@ jobs:
         if: success() || failure()
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $settings = '${{ env.Settings }}' | ConvertFrom-Json
           $project = '${{ matrix.project }}'
           if ("$ENV:GITHUB_EVENT_NAME" -eq 'workflow_run') {
@@ -786,7 +809,7 @@ jobs:
           if ($project -eq ".") { $project = $settings.RepoName }
           'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
+            $value = "$($project.Replace("$([System.IO.Path]::DirectorySeparatorChar)",'_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
@@ -852,6 +875,7 @@ jobs:
         if: success() || failure()
         uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -881,6 +905,7 @@ jobs:
         if: always()
         uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -957,7 +982,7 @@ jobs:
         if: env.WorkflowDepth > 1
         uses: actions/download-artifact@v3
         with:
-          path: '${{ github.workspace }}\.dependencies'
+          path: '.dependencies'
 
       - name: Download Pull Request Changes
         if: github.event_name == 'workflow_run'
@@ -988,17 +1013,18 @@ jobs:
           PRREPOFULLNAME: ${{ github.event.workflow_run.head_repository.full_name }}
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $location = (Get-Location).path
           $prfolder = '.PullRequestChanges'
-          Expand-Archive -Path ".\$prfolder.zip" -DestinationPath ".\$prfolder"
-          Remove-Item -Path ".\$prfolder.zip" -force
+          Expand-Archive -Path ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder.zip" -DestinationPath ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder"
+          Remove-Item -Path ".$([System.IO.Path]::DirectorySeparatorChar)$prfolder.zip" -force
           Get-ChildItem -Path $prfolder -Recurse -File | ForEach-Object {
             $path = $_.FullName
             $deleteFile = $path.EndsWith('.REMOVE')
             if ($deleteFile) {
               $path = $path.SubString(0,$path.Length-7)
             }
-            $newPath = $path.Replace("$prfolder\","")
+            $newPath = $path.Replace("$prfolder$([System.IO.Path]::DirectorySeparatorChar)","")
             $newFolder = [System.IO.Path]::GetDirectoryName($newPath)
             $extension = [System.IO.Path]::GetExtension($path)
             $filename = [System.IO.Path]::GetFileName($path)
@@ -1029,6 +1055,7 @@ jobs:
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
@@ -1037,6 +1064,7 @@ jobs:
         env:
           secrets: ${{ toJson(secrets) }}
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           settingsJson: ${{ env.Settings }}
           secrets: 'licenseFileUrl,insiderSasToken,CodeSignCertificateUrl,CodeSignCertificatePassword,KeyVaultCertificateUrl,KeyVaultCertificatePassword,KeyVaultClientId,StorageContext,GitHubPackagesContext'
@@ -1045,6 +1073,7 @@ jobs:
         id: RunPipeline
         uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
@@ -1074,6 +1103,7 @@ jobs:
         if: success() || failure()
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $settings = '${{ env.Settings }}' | ConvertFrom-Json
           $project = '${{ matrix.project }}'
           if ("$ENV:GITHUB_EVENT_NAME" -eq 'workflow_run') {
@@ -1086,7 +1116,7 @@ jobs:
           if ($project -eq ".") { $project = $settings.RepoName }
           'Apps','Dependencies','TestApps','TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
+            $value = "$($project.Replace("$([System.IO.Path]::DirectorySeparatorChar)",'_'))-$($ref)-$_-$($settings.repoVersion).$($settings.appBuild).$($settings.appRevision)"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
@@ -1152,6 +1182,7 @@ jobs:
         if: success() || failure()
         uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -1181,6 +1212,7 @@ jobs:
         if: always()
         uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
+          shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -1199,23 +1231,27 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          path: '${{ github.workspace }}\.artifacts'
+          path: '.artifacts'
 
       - name: EnvName
         id: envName
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $envName = '${{ matrix.environment }}'.split(' ')[0]
           Add-Content -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
 
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
+        with:
+          shell: pwsh
 
       - name: Read secrets
         uses: freddydk/AL-Go-Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
+          shell: pwsh
           settingsJson: ${{ env.Settings }}
           secrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext,${{ steps.envName.outputs.envName }}-EnvironmentName,${{ steps.envName.outputs.envName }}_EnvironmentName,EnvironmentName,Projects'
 
@@ -1223,13 +1259,21 @@ jobs:
         id: authContext
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $envName = '${{ steps.envName.outputs.envName }}'
+          $deployToSettingStr = [System.Environment]::GetEnvironmentVariable("DeployTo$envName")
+          if ($deployToSettingStr) {
+            $deployToSetting = $deployToSettingStr | ConvertFrom-Json
+          }
+          else {
+            $deployToSetting = [PSCustomObject]@{}
+          }
           $authContext = $null
           "$($envName)-AuthContext", "$($envName)_AuthContext", "AuthContext" | ForEach-Object {
             if (!($authContext)) {
               $authContext = [System.Environment]::GetEnvironmentVariable($_)
               if ($authContext) {
-                Write-Host "Using $_ secret"
+                Write-Host "Using $_ secret as AuthContext"
               }
             }            
           }
@@ -1237,28 +1281,39 @@ jobs:
             Write-Host "::Error::No AuthContext provided"
             exit 1
           }
-          $environmentName = $null
-          "$($envName)-EnvironmentName", "$($envName)_EnvironmentName", "EnvironmentName" | ForEach-Object {
-            if (!($EnvironmentName)) {
-              $EnvironmentName = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable($_)))
-              if ($EnvironmentName) {
-                Write-Host "Using $_ secret"
-              }
-            }            
+          if ($deployToSetting.PSObject.Properties.name -eq "EnvironmentName") {
+            $environmentName = $deployToSetting.EnvironmentName
+          }
+          else {
+            $environmentName = $null
+            "$($envName)-EnvironmentName", "$($envName)_EnvironmentName", "EnvironmentName" | ForEach-Object {
+              if (!($EnvironmentName)) {
+                $EnvironmentName = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable($_)))
+                if ($EnvironmentName) {
+                  Write-Host "Using $_ secret as EnvironmentName"
+                  Write-Host "Please consider using the DeployTo$_ setting instead, where you can specify EnvironmentName, Projects and branches"
+                }
+              }            
+            }
           }
           if (!($environmentName)) {
             $environmentName = '${{ steps.envName.outputs.envName }}'
           }
           $environmentName = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes(($environmentName + '${{ matrix.environment }}'.SubString($envName.Length)).ToUpperInvariant()))
 
-          $projects = [System.Environment]::GetEnvironmentVariable("$($envName)-Projects")
-          if (-not $projects) {
-            $projects = [System.Environment]::GetEnvironmentVariable("$($envName)_Projects")
+          if ($deployToSetting.PSObject.Properties.name -eq "Projects") {
+            $projects = $deployToSetting.Projects
+          }
+          else {
+            $projects = [System.Environment]::GetEnvironmentVariable("$($envName)-Projects")
             if (-not $projects) {
-              $projects = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable('projects')))
+              $projects = [System.Environment]::GetEnvironmentVariable("$($envName)_Projects")
+              if (-not $projects) {
+                $projects = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable('projects')))
+              }
             }
           }
-          if ($projects -eq '') {
+          if ($projects -eq '' -or $projects -eq '*') {
             $projects = '*'
           }
           else {
@@ -1269,19 +1324,21 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "authContext=$authContext"
           Write-Host "authContext=$authContext"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "environmentName=$environmentName"
-          Write-Host "environmentName=$environmentName"
+          Write-Host "environmentName=$([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($environmentName)))"
+          Write-Host "environmentName (as Base64)=$environmentName"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "projects=$projects"
           Write-Host "projects=$projects"
 
       - name: Deploy
         uses: freddydk/AL-Go-Actions/Deploy@main
         env:
-          authContext: ${{ steps.authContext.outputs.authContext }}
+          AuthContext: ${{ steps.authContext.outputs.authContext }}
         with:
+          shell: pwsh
           type: 'CD'
           projects: ${{ steps.authContext.outputs.projects }}
           environmentName: ${{ steps.authContext.outputs.environmentName }}
-          artifacts: '${{ github.workspace }}\.artifacts'
+          artifacts: '.artifacts'
 
   Deliver:
     needs: [ Initialization, Build ]
@@ -1290,7 +1347,7 @@ jobs:
       matrix:
         deliveryTarget: ${{ fromJson(needs.Initialization.outputs.deliveryTargets) }}
       fail-fast: false
-    runs-on: [ windows-latest ]
+    runs-on: [ ubuntu-latest ]
     name: Deliver to ${{ matrix.deliveryTarget }}
     steps:
       - name: Checkout
@@ -1299,16 +1356,19 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v3
         with:
-          path: '${{ github.workspace }}\.artifacts'
+          path: '.artifacts'
 
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
+        with:
+          shell: pwsh
 
       - name: Read secrets
         uses: freddydk/AL-Go-Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
+          shell: pwsh
           settingsJson: ${{ env.Settings }}
           secrets: '${{ matrix.deliveryTarget }}Context'
 
@@ -1316,6 +1376,7 @@ jobs:
         id: deliveryContext
         run: |
           $ErrorActionPreference = "STOP"
+          Set-StrictMode -version 2.0
           $contextName = '${{ matrix.deliveryTarget }}Context'
           $deliveryContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable($contextName)))
           Add-Content -Path $env:GITHUB_OUTPUT -Value "deliveryContext=$deliveryContext"
@@ -1326,14 +1387,15 @@ jobs:
         env:
           deliveryContext: ${{ steps.deliveryContext.outputs.deliveryContext }}
         with:
+          shell: pwsh
           type: 'CD'
           projects: ${{ needs.Initialization.outputs.projects }}
           deliveryTarget: ${{ matrix.deliveryTarget }}
-          artifacts: '${{ github.workspace }}\.artifacts'
+          artifacts: '.artifacts'
 
   UpdatePRcheck:
     if: always() && github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success'
-    runs-on: [ windows-latest ]
+    runs-on: [ ubuntu-latest ]
     needs: [ Initialization, Build ]
     steps:
       - name: Update CI/CD Workflow Check Run
@@ -1350,7 +1412,7 @@ jobs:
 
   PostProcess:
     if: (!cancelled()) && (github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success')
-    runs-on: [ windows-latest ]
+    runs-on: [ ubuntu-latest ]
     needs: [ Initialization, Build, Deploy, Deliver ]
     steps:
       - name: Checkout
@@ -1360,5 +1422,6 @@ jobs:
         id: PostProcess
         uses: freddydk/AL-Go-Actions/WorkflowPostProcess@main
         with:
+          shell: pwsh
           eventId: "DO0091"
           telemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
