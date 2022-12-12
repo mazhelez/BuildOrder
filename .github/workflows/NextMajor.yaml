@@ -59,7 +59,7 @@ jobs:
           $projects = '${{ steps.ReadSettings.outputs.ProjectsJson }}' | ConvertFrom-Json
           $buildOrder = '${{ steps.ReadSettings.outputs.BuildOrderJson }}' | ConvertFrom-Json
           $depth = ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
-          $workflowDepth = ${{ steps.ReadSettings.outputs.workflowDepth }}
+          $workflowDepth = ${{ env.workflowDepth }}
           if ($depth -lt $workflowDepth) {
             Write-Host "::Error::Project Dependencies depth is $depth. Workflow is only setup for $workflowDepth. You need to Run Update AL-Go System Files to update the workflows"
             $host.SetShouldExit(1)
