@@ -22,6 +22,7 @@ jobs:
       projects: ${{ steps.ReadSettings.outputs.ProjectsJson }}
       projectCount: ${{ steps.ReadSettings.outputs.ProjectCount }}
       githubRunner: ${{ steps.ReadSettings.outputs.GitHubRunnerJson }}
+      githubRunnerShell: ${{ steps.ReadSettings.outputs.GitHubRunnerShell }}
       projectDependenciesJson: ${{ steps.ReadSettings.outputs.ProjectDependenciesJson }}
       buildOrderJson: ${{ steps.ReadSettings.outputs.BuildOrderJson }}
       buildOrderDepth: ${{ steps.ReadSettings.outputs.BuildOrderDepth }}
@@ -93,6 +94,9 @@ jobs:
     needs: [ Initialization ]
     if: needs.Initialization.outputs.projects1Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
+    defaults:
+      run:
+        shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
     strategy:
       matrix:
         project: ${{ fromJson(needs.Initialization.outputs.projects1) }}
@@ -115,7 +119,7 @@ jobs:
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
@@ -124,7 +128,7 @@ jobs:
         env:
           secrets: ${{ toJson(secrets) }}
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           settingsJson: ${{ env.Settings }}
           secrets: 'licenseFileUrl,insiderSasToken,codeSignCertificateUrl,codeSignCertificatePassword,keyVaultCertificateUrl,keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext'
@@ -132,7 +136,7 @@ jobs:
       - name: Run pipeline
         uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
@@ -210,7 +214,7 @@ jobs:
         if: success() || failure()
         uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -218,7 +222,7 @@ jobs:
         if: always()
         uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -226,6 +230,9 @@ jobs:
     needs: [ Initialization, Build1 ]
     if: always() && (!cancelled()) && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && needs.Initialization.outputs.projects2Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
+    defaults:
+      run:
+        shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
     strategy:
       matrix:
         project: ${{ fromJson(needs.Initialization.outputs.projects2) }}
@@ -248,7 +255,7 @@ jobs:
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
@@ -257,7 +264,7 @@ jobs:
         env:
           secrets: ${{ toJson(secrets) }}
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           settingsJson: ${{ env.Settings }}
           secrets: 'licenseFileUrl,insiderSasToken,codeSignCertificateUrl,codeSignCertificatePassword,keyVaultCertificateUrl,keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext'
@@ -265,7 +272,7 @@ jobs:
       - name: Run pipeline
         uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
@@ -343,7 +350,7 @@ jobs:
         if: success() || failure()
         uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -351,7 +358,7 @@ jobs:
         if: always()
         uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -359,6 +366,9 @@ jobs:
     needs: [ Initialization, Build2 ]
     if: always() && (!cancelled()) && (needs.Build2.result == 'success' || needs.Build2.result == 'skipped') && needs.Initialization.outputs.projects3Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
+    defaults:
+      run:
+        shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
     strategy:
       matrix:
         project: ${{ fromJson(needs.Initialization.outputs.projects3) }}
@@ -381,7 +391,7 @@ jobs:
       - name: Read settings
         uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
@@ -390,7 +400,7 @@ jobs:
         env:
           secrets: ${{ toJson(secrets) }}
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           settingsJson: ${{ env.Settings }}
           secrets: 'licenseFileUrl,insiderSasToken,codeSignCertificateUrl,codeSignCertificatePassword,keyVaultCertificateUrl,keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext'
@@ -398,7 +408,7 @@ jobs:
       - name: Run pipeline
         uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
           ProjectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
@@ -476,7 +486,7 @@ jobs:
         if: success() || failure()
         uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
@@ -484,7 +494,7 @@ jobs:
         if: always()
         uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
-          shell: pwsh
+          shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           Project: ${{ matrix.project }}
 
