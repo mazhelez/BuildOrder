@@ -938,8 +938,8 @@ jobs:
           Project: ${{ matrix.project }}
 
   Build:
-    needs: [ Initialization, Build2 ]
-    if: always() && (!cancelled()) && (needs.Build2.result == 'success' || needs.Build2.result == 'skipped') && needs.Initialization.outputs.projects3Count > 0
+    needs: [ Initialization, Build2, Build1 ]
+    if: always() && (!cancelled()) && (needs.Build2.result == 'success' || needs.Build2.result == 'skipped') && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && needs.Initialization.outputs.projects3Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     defaults:
       run:
