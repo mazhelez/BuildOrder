@@ -3,4 +3,5 @@
   "templateUrl": "https://github.com/freddydk/AL-Go-PTE@issue324",
   "useProjectDependencies": true,
   "runs-on": "ubuntu-latest"
+  
 }
