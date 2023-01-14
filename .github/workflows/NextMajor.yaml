@@ -38,14 +38,14 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go-Actions/WorkflowInitialize@issue324
+        uses: freddydk/AL-Go-Actions/WorkflowInitialize@main
         with:
           shell: pwsh
           eventId: "DO0099"
 
       - name: Read settings
         id: ReadSettings
-        uses: freddydk/AL-Go-Actions/ReadSettings@issue324
+        uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -117,14 +117,14 @@ jobs:
           path: '${{ github.workspace }}\.dependencies'
 
       - name: Read settings
-        uses: freddydk/AL-Go-Actions/ReadSettings@issue324
+        uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
       - name: Read secrets
-        uses: freddydk/AL-Go-Actions/ReadSecrets@issue324
+        uses: freddydk/AL-Go-Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
@@ -134,7 +134,7 @@ jobs:
           secrets: 'licenseFileUrl,insiderSasToken,codeSignCertificateUrl,codeSignCertificatePassword,keyVaultCertificateUrl,keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext'
 
       - name: Run pipeline
-        uses: freddydk/AL-Go-Actions/RunPipeline@issue324
+        uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -172,7 +172,7 @@ jobs:
           if ($project -eq ".") { $project = $settings.repoName }
           'TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$_-NextMajor-$([DateTime]::UtcNow.ToString('yyyyMMdd'))"
+            $value = "$($project.Replace('\','_').Replace('/','_'))-$_-NextMajor-$([DateTime]::UtcNow.ToString('yyyyMMdd'))"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
@@ -212,7 +212,7 @@ jobs:
       - name: Analyze Test Results
         id: analyzeTestResults
         if: success() || failure()
-        uses: freddydk/AL-Go-Actions/AnalyzeTests@issue324
+        uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -220,7 +220,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        uses: freddydk/AL-Go-Actions/PipelineCleanup@issue324
+        uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -253,14 +253,14 @@ jobs:
           path: '${{ github.workspace }}\.dependencies'
 
       - name: Read settings
-        uses: freddydk/AL-Go-Actions/ReadSettings@issue324
+        uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
       - name: Read secrets
-        uses: freddydk/AL-Go-Actions/ReadSecrets@issue324
+        uses: freddydk/AL-Go-Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
@@ -270,7 +270,7 @@ jobs:
           secrets: 'licenseFileUrl,insiderSasToken,codeSignCertificateUrl,codeSignCertificatePassword,keyVaultCertificateUrl,keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext'
 
       - name: Run pipeline
-        uses: freddydk/AL-Go-Actions/RunPipeline@issue324
+        uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -308,7 +308,7 @@ jobs:
           if ($project -eq ".") { $project = $settings.repoName }
           'TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$_-NextMajor-$([DateTime]::UtcNow.ToString('yyyyMMdd'))"
+            $value = "$($project.Replace('\','_').Replace('/','_'))-$_-NextMajor-$([DateTime]::UtcNow.ToString('yyyyMMdd'))"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
@@ -348,7 +348,7 @@ jobs:
       - name: Analyze Test Results
         id: analyzeTestResults
         if: success() || failure()
-        uses: freddydk/AL-Go-Actions/AnalyzeTests@issue324
+        uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -356,7 +356,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        uses: freddydk/AL-Go-Actions/PipelineCleanup@issue324
+        uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -389,14 +389,14 @@ jobs:
           path: '${{ github.workspace }}\.dependencies'
 
       - name: Read settings
-        uses: freddydk/AL-Go-Actions/ReadSettings@issue324
+        uses: freddydk/AL-Go-Actions/ReadSettings@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           project: ${{ matrix.project }}
 
       - name: Read secrets
-        uses: freddydk/AL-Go-Actions/ReadSecrets@issue324
+        uses: freddydk/AL-Go-Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
@@ -406,7 +406,7 @@ jobs:
           secrets: 'licenseFileUrl,insiderSasToken,codeSignCertificateUrl,codeSignCertificatePassword,keyVaultCertificateUrl,keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext'
 
       - name: Run pipeline
-        uses: freddydk/AL-Go-Actions/RunPipeline@issue324
+        uses: freddydk/AL-Go-Actions/RunPipeline@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -444,7 +444,7 @@ jobs:
           if ($project -eq ".") { $project = $settings.repoName }
           'TestResults','BcptTestResults','BuildOutput','ContainerEventLog' | ForEach-Object {
             $name = "$($_)ArtifactsName"
-            $value = "$($project.Replace('\','_'))-$_-NextMajor-$([DateTime]::UtcNow.ToString('yyyyMMdd'))"
+            $value = "$($project.Replace('\','_').Replace('/','_'))-$_-NextMajor-$([DateTime]::UtcNow.ToString('yyyyMMdd'))"
             Add-Content -Path $env:GITHUB_OUTPUT -Value "$name=$value"
             Add-Content -Path $env:GITHUB_ENV -Value "$name=$value"
           }
@@ -484,7 +484,7 @@ jobs:
       - name: Analyze Test Results
         id: analyzeTestResults
         if: success() || failure()
-        uses: freddydk/AL-Go-Actions/AnalyzeTests@issue324
+        uses: freddydk/AL-Go-Actions/AnalyzeTests@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -492,7 +492,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        uses: freddydk/AL-Go-Actions/PipelineCleanup@issue324
+        uses: freddydk/AL-Go-Actions/PipelineCleanup@main
         with:
           shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -508,7 +508,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go-Actions/WorkflowPostProcess@issue324
+        uses: freddydk/AL-Go-Actions/WorkflowPostProcess@main
         with:
           shell: pwsh
           eventId: "DO0099"
