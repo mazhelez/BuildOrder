@@ -1,4 +1,4 @@
-name: 'CI/CD'
+name: ' CI/CD'
 
 on:
   workflow_dispatch:
@@ -214,7 +214,7 @@ jobs:
 
   Build1:
     needs: [ Initialization ]
-    if: needs.Initialization.outputs.projects1Count > 0
+    if: (!failure()) && needs.Initialization.outputs.projects1Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     defaults:
       run:
@@ -377,7 +377,7 @@ jobs:
 
   Build2:
     needs: [ Initialization, Build1 ]
-    if: always() && (!cancelled()) && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && needs.Initialization.outputs.projects2Count > 0
+    if: (!failure()) && (!cancelled()) && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && needs.Initialization.outputs.projects2Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     defaults:
       run:
@@ -540,7 +540,7 @@ jobs:
 
   Build:
     needs: [ Initialization, Build2, Build1 ]
-    if: always() && (!cancelled()) && (needs.Build2.result == 'success' || needs.Build2.result == 'skipped') && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && needs.Initialization.outputs.projects3Count > 0
+    if: (!failure()) && (!cancelled()) && (needs.Build2.result == 'success' || needs.Build2.result == 'skipped') && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && needs.Initialization.outputs.projects3Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     defaults:
       run:
