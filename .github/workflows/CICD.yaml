@@ -9,8 +9,6 @@ on:
       - '!.github/workflows/CICD.yaml'
     branches: [ 'main', 'release/*', 'feature/*' ]
 
-run-name: 'CI/CD: ${{github.event.head_commit.message}}'
-
 defaults:
   run:
     shell: pwsh
@@ -214,7 +212,7 @@ jobs:
 
   Build1:
     needs: [ Initialization ]
-    if: (!failure()) && needs.Initialization.outputs.projects1Count > 0
+    if: (!failure()) && (!cancelled()) && needs.Initialization.outputs.projects1Count > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     defaults:
       run:
