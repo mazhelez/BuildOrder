@@ -52,12 +52,6 @@ jobs:
       projects: ${{ steps.determineProjectsToBuild.outputs.ProjectsJson }}
       projectDependenciesJson: ${{ steps.determineProjectsToBuild.outputs.ProjectDependenciesJson }}
       buildOrderJson: ${{ steps.determineProjectsToBuild.outputs.BuildOrderJson }}
-      projects1: ${{ steps.BuildOrder.outputs.projects1Json }}
-      projects1Count: ${{ steps.BuildOrder.outputs.projects1Count }}
-      projects2: ${{ steps.BuildOrder.outputs.projects2Json }}
-      projects2Count: ${{ steps.BuildOrder.outputs.projects2Count }}
-      projects3: ${{ steps.BuildOrder.outputs.projects3Json }}
-      projects3Count: ${{ steps.BuildOrder.outputs.projects3Count }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -81,7 +75,7 @@ jobs:
           
       - name: Determine Projects To Build
         id: determineProjectsToBuild
-        uses: mazhelez/AL-Go-Actions/determineProjectsToBuild@separate-load-projects
+        uses: mazhelez/AL-Go-Actions/DetermineProjectsToBuild@separate-load-projects
         with:
           shell: powershell
 
@@ -100,7 +94,7 @@ jobs:
 
   Build1:
     needs: [ Initialization ]
-    if: (!failure()) && (!cancelled()) && needs.Initialization.outputs.projects1Count > 0
+    if: (!failure()) && (!cancelled()) && fromJson(needs.Initialization.outputs.buildOrderJson)[0].projectsCount > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     defaults:
       run:
@@ -223,14 +217,14 @@ jobs:
 
   Build2:
     needs: [ Initialization, Build1 ]
-    if: (!failure()) && (!cancelled()) && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && needs.Initialization.outputs.projects2Count > 0
+    if: (!failure()) && (!cancelled()) && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && fromJson(needs.Initialization.outputs.buildOrderJson)[1].projectsCount > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     defaults:
       run:
         shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
     strategy:
       matrix:
-        include: ${{ fromJson(needs.Initialization.outputs.buildOrderJson)[0].buildDimensions }}
+        include: ${{ fromJson(needs.Initialization.outputs.buildOrderJson)[1].buildDimensions }}
       fail-fast: false
     name: Build ${{ matrix.project }} - ${{ matrix.buildMode }}
     outputs:
@@ -346,14 +340,14 @@ jobs:
 
   Build:
     needs: [ Initialization, Build2, Build1 ]
-    if: (!failure()) && (!cancelled()) && (needs.Build2.result == 'success' || needs.Build2.result == 'skipped') && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && needs.Initialization.outputs.projects3Count > 0
+    if: (!failure()) && (!cancelled()) && (needs.Build2.result == 'success' || needs.Build2.result == 'skipped') && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && fromJson(needs.Initialization.outputs.buildOrderJson)[2].projectsCount > 0
     runs-on: ${{ fromJson(needs.Initialization.outputs.githubRunner) }}
     defaults:
       run:
         shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
     strategy:
       matrix:
-        include: ${{ fromJson(needs.Initialization.outputs.buildOrderJson)[0].buildDimensions }}
+        include: ${{ fromJson(needs.Initialization.outputs.buildOrderJson)[2].buildDimensions }}
       fail-fast: false
     name: Build ${{ matrix.project }} - ${{ matrix.buildMode }}
     outputs:
