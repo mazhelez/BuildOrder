@@ -1,6 +1,6 @@
 {
   "type": "PTE",
   "templateUrl": "https://github.com/microsoft/AL-Go-PTE@preview",
-  "useProjectDependencies": false,
+  "useProjectDependencies": true,
   "runs-on": "ubuntu-latest"
 }
