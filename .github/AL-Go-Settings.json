@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/mazhelez/AL-Go-PTE@separate-load-projects",
+  "templateUrl": "https://github.com/microsoft/AL-Go-PTE@preview",
   "useProjectDependencies": false,
   "runs-on": "ubuntu-latest"
 }
