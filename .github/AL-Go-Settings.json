@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go-PTE@cachekey",
+  "templateUrl": "https://github.com/freddydk/AL-Go-PTE@jobname",
   "useProjectDependencies": true,
   "useCompilerFolder": true,
   "doNotPublishApps": true,
