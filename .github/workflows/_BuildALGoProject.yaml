@@ -67,7 +67,7 @@ on:
         required: false
         type: string
 jobs:
-  _:
+  I:
     runs-on: ${{ fromJson(inputs.runsOn) }}
     steps:
         - name: Checkout
