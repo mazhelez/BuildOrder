@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@newfeature",
+  "templateUrl": "https://github.com/freddydk/AL-Go@pr581",
   "useProjectDependencies": true,
   "useCompilerFolder": true,
   "doNotPublishApps": true,
