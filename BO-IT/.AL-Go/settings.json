@@ -1,9 +1,6 @@
-﻿{
-    "country":  "it",
-    "appFolders":  [
-
-                   ],
-    "testFolders":  [
-
-                    ]
+{
+  "country": "it",
+  "appFolders": [],
+  "testFolders": [],
+  "repoVersion": "2.0"
 }
