@@ -38,13 +38,13 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@pr581
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@issue559
         with:
           shell: pwsh
           eventId: "DO0090"
 
       - name: Add existing app
-        uses: freddydk/AL-Go/Actions/AddExistingApp@pr581
+        uses: freddydk/AL-Go/Actions/AddExistingApp@issue559
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -54,7 +54,7 @@ jobs:
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@pr581
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@issue559
         with:
           shell: pwsh
           eventId: "DO0090"
