@@ -41,13 +41,13 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: mazhelez/AL-Go/Actions/WorkflowInitialize@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
         with:
           shell: pwsh
           eventId: "DO0090"
 
       - name: Read settings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         if: github.event.inputs.useGhTokenWorkflow == 'true'
         with:
           shell: pwsh
@@ -55,7 +55,7 @@ jobs:
           get: keyVaultName,ghTokenWorkflowSecretName
 
       - name: Read secrets
-        uses: mazhelez/AL-Go/Actions/ReadSecrets@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         if: github.event.inputs.useGhTokenWorkflow == 'true'
         env:
           secrets: ${{ toJson(secrets) }}
@@ -78,7 +78,7 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "ghToken=$ghToken"
 
       - name: Add existing app
-        uses: mazhelez/AL-Go/Actions/AddExistingApp@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/AddExistingApp@main
         with:
           shell: pwsh
           token: ${{ steps.CalculateToken.outputs.ghToken }}
@@ -89,7 +89,7 @@ jobs:
 
       - name: Finalize the workflow
         if: always()
-        uses: mazhelez/AL-Go/Actions/WorkflowPostProcess@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
         with:
           shell: pwsh
           eventId: "DO0090"

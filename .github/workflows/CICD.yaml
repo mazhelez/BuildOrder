@@ -47,14 +47,14 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: mazhelez/AL-Go/Actions/WorkflowInitialize@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
         with:
           shell: pwsh
           eventId: "DO0091"
 
       - name: Read settings
         id: ReadSettings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -67,7 +67,7 @@ jobs:
           
       - name: Determine Projects To Build
         id: determineProjectsToBuild
-        uses: mazhelez/AL-Go/Actions/DetermineProjectsToBuild@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@main
         with:
           shell: pwsh
           maxBuildDepth: ${{ env.workflowDepth }}
@@ -85,7 +85,7 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "Secrets=$($deliveryTargetSecrets -join ',')"
 
       - name: Read secrets
-        uses: mazhelez/AL-Go/Actions/ReadSecrets@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
@@ -159,14 +159,14 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Read settings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           get: templateUrl
 
       - name: Check for updates to AL-Go system files
-        uses: mazhelez/AL-Go/Actions/CheckForUpdates@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@main
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -266,12 +266,12 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
 
       - name: Read settings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
 
       - name: Read secrets
-        uses: mazhelez/AL-Go/Actions/ReadSecrets@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
@@ -353,7 +353,7 @@ jobs:
           Write-Host "projects=$projects"
 
       - name: Deploy
-        uses: mazhelez/AL-Go/Actions/Deploy@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/Deploy@main
         env:
           AuthContext: ${{ steps.authContext.outputs.authContext }}
         with:
@@ -382,12 +382,12 @@ jobs:
           path: '.artifacts'
 
       - name: Read settings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
 
       - name: Read secrets
-        uses: mazhelez/AL-Go/Actions/ReadSecrets@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         env:
           secrets: ${{ toJson(secrets) }}
         with:
@@ -405,7 +405,7 @@ jobs:
           Write-Host "deliveryContext=$deliveryContext"
 
       - name: Deliver
-        uses: mazhelez/AL-Go/Actions/Deliver@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/Deliver@main
         env:
           deliveryContext: ${{ steps.deliveryContext.outputs.deliveryContext }}
         with:
@@ -425,7 +425,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: mazhelez/AL-Go/Actions/WorkflowPostProcess@fetch-artifacts-per-build-mode
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
         with:
           shell: pwsh
           eventId: "DO0091"
