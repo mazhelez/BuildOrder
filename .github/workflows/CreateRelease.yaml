@@ -69,28 +69,27 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/WorkflowInitialize@fetch-artifacts-per-build-mode
         with:
           shell: pwsh
           eventId: "DO0094"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@SettingsEnv
         id: ReadSettings
+        uses: mazhelez/AL-Go/Actions/ReadSettings@fetch-artifacts-per-build-mode
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           get: templateUrl,repoName
-          useBase64: 'Y'
 
       - name: Determine Projects
         id: determineProjects
-        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/DetermineProjectsToBuild@fetch-artifacts-per-build-mode
         with:
           shell: pwsh
 
       - name: Check for updates to AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/CheckForUpdates@fetch-artifacts-per-build-mode
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -166,16 +165,15 @@ jobs:
             }
           }
           $artifacts = @{ "include" = $include }
-          Write-Host "OUTPUTS:"
           $artifactsJson = $artifacts | ConvertTo-Json -compress
           Add-Content -Path $env:GITHUB_OUTPUT -Value "artifacts=$artifactsJson"
-          Write-Host "- artifacts=$artifactsJson"
+          Write-Host "artifacts=$artifactsJson"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "commitish=$sha"
-          Write-Host "- commitish=$sha"
+          Write-Host "commitish=$sha"
 
       - name: Prepare release notes
         id: createreleasenotes
-        uses: freddydk/AL-Go/Actions/CreateReleaseNotes@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/CreateReleaseNotes@fetch-artifacts-per-build-mode
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -218,21 +216,19 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@SettingsEnv
-        id: ReadSettings
+        uses: mazhelez/AL-Go/Actions/ReadSettings@fetch-artifacts-per-build-mode
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
-          useBase64: 'Y'
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/ReadSecrets@fetch-artifacts-per-build-mode
         env:
           secrets: ${{ toJson(secrets) }}
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
-          settingsJson: ${{ steps.ReadSettings.outputs.SettingsJson }}
+          settingsJson: ${{ env.Settings }}
           secrets: 'nuGetContext,storageContext'
 
       - name: Download artifact
@@ -276,7 +272,7 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "nuGetContext=$nuGetContext"
 
       - name: Deliver to NuGet
-        uses: freddydk/AL-Go/Actions/Deliver@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/Deliver@fetch-artifacts-per-build-mode
         if: ${{ steps.nuGetContext.outputs.nuGetContext }}
         env:
           deliveryContext: ${{ steps.nuGetContext.outputs.nuGetContext }}
@@ -300,7 +296,7 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "storageContext=$storageContext"
 
       - name: Deliver to Storage
-        uses: freddydk/AL-Go/Actions/Deliver@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/Deliver@fetch-artifacts-per-build-mode
         if: ${{ steps.storageContext.outputs.storageContext }}
         env:
           deliveryContext: ${{ steps.storageContext.outputs.storageContext }}
@@ -337,24 +333,22 @@ jobs:
     needs: [ CreateRelease, UploadArtifacts ]
     steps:
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@SettingsEnv
-        id: ReadSettings
+        uses: mazhelez/AL-Go/Actions/ReadSettings@fetch-artifacts-per-build-mode
         if: github.event.inputs.useGhTokenWorkflow == 'true'
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           get: keyVaultName,ghTokenWorkflowSecretName
-          useBase64: 'Y'
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/ReadSecrets@fetch-artifacts-per-build-mode
         if: github.event.inputs.useGhTokenWorkflow == 'true'
         env:
           secrets: ${{ toJson(secrets) }}
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
-          settingsJson: ${{ steps.ReadSettings.outputs.SettingsJson }}
+          settingsJson: ${{ env.Settings }}
           secrets: 'ghTokenWorkflow=${{ env.GHTOKENWORKFLOWSECRETNAME }}'
 
       - name: CalculateToken
@@ -370,7 +364,7 @@ jobs:
           Add-Content -Path $env:GITHUB_OUTPUT -Value "ghToken=$ghToken"
 
       - name: Update Version Number
-        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/IncrementVersionNumber@fetch-artifacts-per-build-mode
         with:
           shell: pwsh
           token: ${{ steps.CalculateToken.outputs.ghToken }}
@@ -388,7 +382,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@SettingsEnv
+        uses: mazhelez/AL-Go/Actions/WorkflowPostProcess@fetch-artifacts-per-build-mode
         with:
           shell: pwsh
           eventId: "DO0094"

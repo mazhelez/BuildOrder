@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@SettingsEnv",
+  "templateUrl": "https://github.com/mazhelez/AL-Go@fetch-artifacts-per-build-mode",
   "useProjectDependencies": true,
   "useCompilerFolder": true,
   "doNotPublishApps": true,
