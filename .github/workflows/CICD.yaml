@@ -27,7 +27,6 @@ jobs:
     runs-on: [ ubuntu-latest ]
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
-      settings: ${{ steps.ReadSettings.outputs.SettingsJson }}
       environments: ${{ steps.ReadSettings.outputs.EnvironmentsJson }}
       environmentCount: ${{ steps.ReadSettings.outputs.EnvironmentCount }}
       deliveryTargets: ${{ steps.DetermineDeliveryTargets.outputs.DeliveryTargetsJson }}
@@ -47,27 +46,28 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@Settings2
         with:
           shell: pwsh
           eventId: "DO0091"
 
       - name: Read settings
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings2
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           getEnvironments: '*'
+          useBase64: 'Y'
 
       - name: Determine Workflow Depth
         id: DetermineWorkflowDepth
         run: |
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "WorkflowDepth=$($env:workflowDepth)"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "WorkflowDepth=$($env:workflowDepth)"
           
       - name: Determine Projects To Build
         id: determineProjectsToBuild
-        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@main
+        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@Settings2
         with:
           shell: pwsh
           maxBuildDepth: ${{ env.workflowDepth }}
@@ -82,15 +82,16 @@ jobs:
             $deliveryTarget = [System.IO.Path]::GetFileNameWithoutExtension($_.Name.SubString($namePrefix.Length))
             $deliveryTargetSecrets += @("$($deliveryTarget)Context")
           }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "Secrets=$($deliveryTargetSecrets -join ',')"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "Secrets=$($deliveryTargetSecrets -join ',')"
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@main
+        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings2
+        id: ReadSecrets
         env:
           secrets: ${{ toJson(secrets) }}
         with:
           shell: pwsh
-          settingsJson: ${{ env.Settings }}
+          settingsJson: ${{ steps.ReadSettings.outputs.SettingsJson }}
           secrets: ${{ steps.DetermineDeliveryTargetSecrets.outputs.Secrets }}
 
       - name: Determine Delivery Targets
@@ -124,7 +125,7 @@ jobs:
             $deliveryContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable($contextName)))
             if ($deliveryContext) {
               $settingName = "DeliverTo$_"
-              $settings = $env:Settings | ConvertFrom-Json
+              $settings = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String('${{ steps.ReadSecrets.outputs.SettingsJson }}')) | ConvertFrom-Json
               if (($settings.PSObject.Properties.Name -eq $settingName) -and ($settings."$settingName".PSObject.Properties.Name -eq "Branches")) {
                 Write-Host "Branches:"
                 $settings."$settingName".Branches | ForEach-Object {
@@ -143,13 +144,13 @@ jobs:
             }
             $include
           })
+          Write-Host "OUTPUTS:"
           $deliveryTargetsJson = $deliveryTargets | ConvertTo-Json -Depth 99 -compress
           if ($deliveryTargets.Count -lt 2) { $deliveryTargetsJson = "[$($deliveryTargetsJson)]" }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "DeliveryTargetsJson=$deliveryTargetsJson"
-          Write-Host "DeliveryTargetsJson=$deliveryTargetsJson"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "DeliveryTargetCount=$($deliveryTargets.Count)"
-          Write-Host "DeliveryTargetCount=$($deliveryTargets.Count)"
-          Add-Content -Path $env:GITHUB_ENV -Value "DeliveryTargets=$deliveryTargetsJson"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "DeliveryTargetsJson=$deliveryTargetsJson"
+          Write-Host "- DeliveryTargetsJson=$deliveryTargetsJson"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "DeliveryTargetCount=$($deliveryTargets.Count)"
+          Write-Host "- DeliveryTargetCount=$($deliveryTargets.Count)"
 
   CheckForUpdates:
     runs-on: [ ubuntu-latest ]
@@ -159,14 +160,15 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings2
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           get: templateUrl
+          useBase64: 'Y'
 
       - name: Check for updates to AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@main
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@Settings2
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -263,20 +265,22 @@ jobs:
         run: |
           $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
           $envName = '${{ matrix.environment }}'.split(' ')[0]
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings2
+        id: ReadSettings
         with:
           shell: pwsh
+          useBase64: 'Y'
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@main
+        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings2
         env:
           secrets: ${{ toJson(secrets) }}
         with:
           shell: pwsh
-          settingsJson: ${{ env.Settings }}
+          settingsJson: ${{ steps.ReadSettings.outputs.SettingsJson }}
           secrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext,${{ steps.envName.outputs.envName }}-EnvironmentName,${{ steps.envName.outputs.envName }}_EnvironmentName,EnvironmentName,projects'
 
       - name: AuthContext
@@ -344,16 +348,16 @@ jobs:
             $projects = ($projects.Split(',') | Where-Object { $buildProjects -contains $_ }) -join ','
           }
 
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "authContext=$authContext"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "authContext=$authContext"
           Write-Host "authContext=$authContext"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "environmentName=$environmentName"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "environmentName=$environmentName"
           Write-Host "environmentName=$([System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($environmentName)))"
           Write-Host "environmentName (as Base64)=$environmentName"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "projects=$projects"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "projects=$projects"
           Write-Host "projects=$projects"
 
       - name: Deploy
-        uses: freddydk/AL-Go/Actions/Deploy@main
+        uses: freddydk/AL-Go/Actions/Deploy@Settings2
         env:
           AuthContext: ${{ steps.authContext.outputs.authContext }}
         with:
@@ -382,17 +386,19 @@ jobs:
           path: '.artifacts'
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings2
+        id: ReadSettings
         with:
           shell: pwsh
+          useBase64: 'Y'
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@main
+        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings2
         env:
           secrets: ${{ toJson(secrets) }}
         with:
           shell: pwsh
-          settingsJson: ${{ env.Settings }}
+          settingsJson: ${{ steps.ReadSettings.outputs.SettingsJson }}
           secrets: '${{ matrix.deliveryTarget }}Context'
 
       - name: DeliveryContext
@@ -401,11 +407,11 @@ jobs:
           $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
           $contextName = '${{ matrix.deliveryTarget }}Context'
           $deliveryContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable($contextName)))
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "deliveryContext=$deliveryContext"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "deliveryContext=$deliveryContext"
           Write-Host "deliveryContext=$deliveryContext"
 
       - name: Deliver
-        uses: freddydk/AL-Go/Actions/Deliver@main
+        uses: freddydk/AL-Go/Actions/Deliver@Settings2
         env:
           deliveryContext: ${{ steps.deliveryContext.outputs.deliveryContext }}
         with:
@@ -425,7 +431,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@Settings2
         with:
           shell: pwsh
           eventId: "DO0091"

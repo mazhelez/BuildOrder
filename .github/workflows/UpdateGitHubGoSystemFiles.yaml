@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       templateUrl:
-        description: Template Repository URL (current is https://github.com/freddydk/AL-Go@main)
+        description: Template Repository URL (current is https://github.com/freddydk/AL-Go@Settings2)
         required: false
         default: ''
       directCommit:
@@ -32,26 +32,28 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@Settings2
         with:
           shell: powershell
           eventId: "DO0098"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings2
+        id: ReadSettings
         with:
           shell: powershell
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           get: keyVaultName,ghTokenWorkflowSecretName,templateUrl
+          useBase64: 'Y'
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@main
+        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings2
         env:
           secrets: ${{ toJson(secrets) }}
         with:
           shell: powershell
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
-          settingsJson: ${{ env.Settings }}
+          settingsJson: ${{ steps.ReadSettings.outputs.SettingsJson }}
           secrets: 'ghTokenWorkflow=${{ env.GHTOKENWORKFLOWSECRETNAME }}'
 
       - name: Override templateUrl
@@ -62,7 +64,7 @@ jobs:
           $templateUrl = $ENV:templateUrl
           if ($templateUrl) {
             Write-Host "Using Template Url: $templateUrl"
-            Add-Content -Path $env:GITHUB_ENV -Value "templateUrl=$templateUrl"
+            Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "templateUrl=$templateUrl"
           }
 
       - name: Calculate DirectCommit
@@ -77,10 +79,10 @@ jobs:
             Write-Host "Running Update AL-Go System Files on a schedule. Setting DirectCommit = Y"
             $directCommit = 'Y'
           }
-          Add-Content -Path $env:GITHUB_ENV -Value "DirectCommit=$directCommit"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "DirectCommit=$directCommit"
 
       - name: Update AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@main
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@Settings2
         with:
           shell: powershell
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -91,7 +93,7 @@ jobs:
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@Settings2
         with:
           shell: powershell
           eventId: "DO0098"

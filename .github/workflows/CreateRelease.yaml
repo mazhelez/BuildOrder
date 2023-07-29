@@ -69,27 +69,28 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@Settings2
         with:
           shell: pwsh
           eventId: "DO0094"
 
       - name: Read settings
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings2
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           get: templateUrl,repoName
+          useBase64: 'Y'
 
       - name: Determine Projects
         id: determineProjects
-        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@main
+        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@Settings2
         with:
           shell: pwsh
 
       - name: Check for updates to AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@main
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@Settings2
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -165,15 +166,16 @@ jobs:
             }
           }
           $artifacts = @{ "include" = $include }
+          Write-Host "OUTPUTS:"
           $artifactsJson = $artifacts | ConvertTo-Json -compress
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "artifacts=$artifactsJson"
-          Write-Host "artifacts=$artifactsJson"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "commitish=$sha"
-          Write-Host "commitish=$sha"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "artifacts=$artifactsJson"
+          Write-Host "- artifacts=$artifactsJson"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "commitish=$sha"
+          Write-Host "- commitish=$sha"
 
       - name: Prepare release notes
         id: createreleasenotes
-        uses: freddydk/AL-Go/Actions/CreateReleaseNotes@main
+        uses: freddydk/AL-Go/Actions/CreateReleaseNotes@Settings2
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -216,19 +218,21 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings2
+        id: ReadSettings
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
+          useBase64: 'Y'
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@main
+        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings2
         env:
           secrets: ${{ toJson(secrets) }}
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
-          settingsJson: ${{ env.Settings }}
+          settingsJson: ${{ steps.ReadSettings.outputs.SettingsJson }}
           secrets: 'nuGetContext,storageContext'
 
       - name: Download artifact
@@ -269,10 +273,10 @@ jobs:
           if ('${{ matrix.atype }}' -eq 'Apps') {
             $nuGetContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable('nuGetContext')))
           }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "nuGetContext=$nuGetContext"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "nuGetContext=$nuGetContext"
 
       - name: Deliver to NuGet
-        uses: freddydk/AL-Go/Actions/Deliver@main
+        uses: freddydk/AL-Go/Actions/Deliver@Settings2
         if: ${{ steps.nuGetContext.outputs.nuGetContext }}
         env:
           deliveryContext: ${{ steps.nuGetContext.outputs.nuGetContext }}
@@ -293,10 +297,10 @@ jobs:
           if ('${{ matrix.atype }}' -eq 'Apps') {
             $storageContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String([System.Environment]::GetEnvironmentVariable('storageContext')))
           }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "storageContext=$storageContext"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "storageContext=$storageContext"
 
       - name: Deliver to Storage
-        uses: freddydk/AL-Go/Actions/Deliver@main
+        uses: freddydk/AL-Go/Actions/Deliver@Settings2
         if: ${{ steps.storageContext.outputs.storageContext }}
         env:
           deliveryContext: ${{ steps.storageContext.outputs.storageContext }}
@@ -333,22 +337,24 @@ jobs:
     needs: [ CreateRelease, UploadArtifacts ]
     steps:
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings2
+        id: ReadSettings
         if: github.event.inputs.useGhTokenWorkflow == 'true'
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           get: keyVaultName,ghTokenWorkflowSecretName
+          useBase64: 'Y'
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@main
+        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings2
         if: github.event.inputs.useGhTokenWorkflow == 'true'
         env:
           secrets: ${{ toJson(secrets) }}
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
-          settingsJson: ${{ env.Settings }}
+          settingsJson: ${{ steps.ReadSettings.outputs.SettingsJson }}
           secrets: 'ghTokenWorkflow=${{ env.GHTOKENWORKFLOWSECRETNAME }}'
 
       - name: CalculateToken
@@ -361,10 +367,10 @@ jobs:
           } else {
             $ghToken = '${{ secrets.GITHUB_TOKEN }}'
           }
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "ghToken=$ghToken"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "ghToken=$ghToken"
 
       - name: Update Version Number
-        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@main
+        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@Settings2
         with:
           shell: pwsh
           token: ${{ steps.CalculateToken.outputs.ghToken }}
@@ -382,7 +388,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@Settings2
         with:
           shell: pwsh
           eventId: "DO0094"
