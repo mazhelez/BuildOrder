@@ -61,6 +61,7 @@ jobs:
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
+          get: ghTokenWorkflowSecretName
 
       - name: Read secrets
         uses: freddydk/AL-Go/Actions/ReadSecrets@Settings3
