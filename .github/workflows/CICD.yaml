@@ -101,7 +101,7 @@ jobs:
       - name: Read secrets
         uses: freddydk/AL-Go/Actions/ReadSecrets@Settings4
         env:
-          secrets: ${{ toJson(steps.readGitHubSecrets.outputs.gitHubSecrets) }}
+          secrets: ${{ steps.readGitHubSecrets.outputs.gitHubSecrets }}
         with:
           shell: pwsh
           secrets: ${{ steps.DetermineDeliveryTargetSecrets.outputs.Secrets }}
