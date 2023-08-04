@@ -93,7 +93,7 @@ jobs:
           $env:readSecrets.Split(',') | ForEach-Object {
             $secretName = $_
             if ($secretName -and $gitHubSecrets.PSObject.Properties.Name -eq $secretName) {
-              $secrets[$secretName] = $gitHubSecrets[$secretName]
+              $secrets += @{ $secretName = $gitHubSecrets."$secretName" }
             }
           }
           Add-Content -Path $env:GITHUB_OUTPUT -Value "gitHubSecrets=$($secrets | ConvertTo-Json -compress)"
