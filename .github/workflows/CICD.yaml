@@ -96,7 +96,7 @@ jobs:
               $secrets[$secretName] = $gitHubSecrets[$secretName]
             }
           }
-          Add-Content -Path $env:GITHUB_ENV -Value "gitHubSecrets=$($secrets -join ',')"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "gitHubSecrets=$($secrets | ConvertTo-Json -compress)"
 
       - name: Read secrets
         uses: freddydk/AL-Go/Actions/ReadSecrets@Settings4
