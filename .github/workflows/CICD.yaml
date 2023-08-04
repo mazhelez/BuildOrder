@@ -90,9 +90,9 @@ jobs:
         run: |
           $secrets = @{}
           $gitHubSecrets = '${{ toJson(secrets) }}' | ConvertFrom-Json
-          $readSecrets.Split(',') | ForEach-Object {
+          $env:readSecrets.Split(',') | ForEach-Object {
             $secretName = $_
-            if ($gitHubSecrets.PSObject.Properties.Name -eq $secretName) {
+            if ($secretName -and $gitHubSecrets.PSObject.Properties.Name -eq $secretName) {
               $secrets[$secretName] = $gitHubSecrets[$secretName]
             }
           }
