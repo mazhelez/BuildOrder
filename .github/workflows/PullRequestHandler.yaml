@@ -34,11 +34,7 @@ jobs:
           lfs: true
           ref: refs/pull/${{ github.event.number }}/merge
 
-      - uses: freddydk/AL-Go/Actions/VerifyPRChanges@issue559
-        with:
-          baseSHA: ${{ github.event.pull_request.base.sha }}
-          headSHA: ${{ github.event.pull_request.head.sha }}
-          prbaseRepository: ${{ github.event.pull_request.base.repo.full_name }}
+      - uses: freddydk/AL-Go/Actions/VerifyPRChanges@Settings4
 
   Initialization:
     needs: [ PregateCheck ]
@@ -46,7 +42,6 @@ jobs:
     runs-on: [ windows-latest ]
     outputs:
       telemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
-      settings: ${{ steps.ReadSettings.outputs.SettingsJson }}
       githubRunner: ${{ steps.ReadSettings.outputs.GitHubRunnerJson }}
       githubRunnerShell: ${{ steps.ReadSettings.outputs.GitHubRunnerShell }}
       projects: ${{ steps.determineProjectsToBuild.outputs.ProjectsJson }}
@@ -62,14 +57,14 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@issue559
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@Settings4
         with:
           shell: powershell
           eventId: "DO0104"
 
       - name: Read settings
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@issue559
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings4
         with:
           shell: powershell
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -78,11 +73,11 @@ jobs:
       - name: Determine Workflow Depth
         id: DetermineWorkflowDepth
         run: |
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "WorkflowDepth=$($env:workflowDepth)"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "WorkflowDepth=$($env:workflowDepth)"
           
       - name: Determine Projects To Build
         id: determineProjectsToBuild
-        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@issue559
+        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@Settings4
         with:
           shell: powershell
           maxBuildDepth: ${{ env.workflowDepth }}
@@ -163,7 +158,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@issue559
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@Settings4
         with:
           shell: powershell
           eventId: "DO0104"
