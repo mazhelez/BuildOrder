@@ -53,13 +53,13 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@Settings3
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@Settings4
         with:
           shell: pwsh
           eventId: "DO0095"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@Settings3
+        uses: freddydk/AL-Go/Actions/ReadSettings@Settings4
         if: github.event.inputs.useGhTokenWorkflow == 'true'
         with:
           shell: pwsh
@@ -67,7 +67,7 @@ jobs:
           get: ghTokenWorkflowSecretName
 
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings3
+        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings4
         if: github.event.inputs.useGhTokenWorkflow == 'true'
         env:
           secrets: ${{ toJson(secrets) }}
@@ -89,7 +89,7 @@ jobs:
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "ghToken=$ghToken"
 
       - name: Creating a new test app
-        uses: freddydk/AL-Go/Actions/CreateApp@Settings3
+        uses: freddydk/AL-Go/Actions/CreateApp@Settings4
         with:
           shell: pwsh
           token: ${{ steps.CalculateToken.outputs.ghToken }}
@@ -104,7 +104,7 @@ jobs:
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@Settings3
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@Settings4
         with:
           shell: pwsh
           eventId: "DO0095"
