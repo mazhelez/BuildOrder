@@ -85,10 +85,25 @@ jobs:
           }
           Add-Content -Path $env:GITHUB_OUTPUT -Value "Secrets=$($deliveryTargetSecrets -join ',')"
 
+      - name: Read GitHub secrets
+        id: readGitHubSecrets
+        env: 
+          readSecrets: ${{ steps.DetermineDeliveryTargetSecrets.outputs.Secrets }}
+        run: |
+          $secrets = @{}
+          $gitHubSecrets = '${{ toJson(secrets) }}' | ConvertFrom-Json
+          $readSecrets.Split(',') | ForEach-Object {
+            $secretName = $_
+            if ($gitHubSecrets.PSObject.Properties.Name -eq $secretName) {
+              $secrets[$secretName] = $gitHubSecrets[$secretName]
+            }
+          }
+          Add-Content -Path $env:GITHUB_ENV -Value "gitHubSecrets=$($secrets -join ',')"
+
       - name: Read secrets
         uses: freddydk/AL-Go/Actions/ReadSecrets@issue559
         env:
-          secrets: ${{ toJson(secrets) }}
+          secrets: ${{ toJson(steps.readGitHubSecrets.outputs.gitHubSecrets) }}
         with:
           shell: pwsh
           settingsJson: ${{ env.Settings }}
