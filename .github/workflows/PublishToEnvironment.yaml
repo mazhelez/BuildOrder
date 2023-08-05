@@ -38,14 +38,14 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@Settings4
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@OnlyNeededSecrets
         with:
           shell: pwsh
           eventId: "DO0097"
 
       - name: Read settings
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@Settings4
+        uses: freddydk/AL-Go/Actions/ReadSettings@OnlyNeededSecrets
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -60,15 +60,32 @@ jobs:
           $envName = '${{ fromJson(steps.ReadSettings.outputs.environmentsJson).matrix.include[0].environment }}'.split(' ')[0]
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
 
+      - name: Read GitHub secrets
+        id: readGitHubSecrets
+        env:
+          getSecrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext'
+        run: |
+          $gitHubSecrets = '${{ toJson(secrets) }}' | ConvertFrom-Json
+          $settings = $env:settings | ConvertFrom-Json
+          $secrets = @{}
+          $env:getSecrets.Split(',') | ForEach-Object {
+            $secretName = $_
+            if ($settings.PSObject.Properties.Name -eq "$($secretName)SecretName") { $secretName = $settings."$($secretName)SecretName" }
+            if ($secretName -and $gitHubSecrets.PSObject.Properties.Name -eq $secretName) {
+              $secrets += @{ $secretName = $gitHubSecrets."$secretName" }
+            }
+          }
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "gitHubSecrets=$($secrets | ConvertTo-Json -compress)"
+
       - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings4
+        uses: freddydk/AL-Go/Actions/ReadSecrets@OnlyNeededSecrets
         if: steps.ReadSettings.outputs.UnknownEnvironment == 1
         env:
-          secrets: ${{ toJson(secrets) }}
+          secrets: ${{ steps.readGitHubSecrets.outputs.gitHubSecrets }}
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
-          secrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext'
+          getSecrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext'
 
       - name: Authenticate
         id: Authenticate
@@ -94,7 +111,7 @@ jobs:
             Write-Host "No AuthContext provided for $envName, initiating Device Code flow"
             $ALGoHelperPath = "$([System.IO.Path]::GetTempFileName()).ps1"
             $webClient = New-Object System.Net.WebClient
-            $webClient.DownloadFile('https://raw.githubusercontent.com/freddydk/AL-Go/Settings4/Actions/AL-Go-Helper.ps1', $ALGoHelperPath)
+            $webClient.DownloadFile('https://raw.githubusercontent.com/freddydk/AL-Go/OnlyNeededSecrets/Actions/AL-Go-Helper.ps1', $ALGoHelperPath)
             . $ALGoHelperPath
             $BcContainerHelperPath = DownloadAndImportBcContainerHelper -baseFolder $ENV:GITHUB_WORKSPACE
             $authContext = New-BcAuthContext -includeDeviceLogin -deviceLoginTimeout ([TimeSpan]::FromSeconds(0))
@@ -125,14 +142,32 @@ jobs:
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@Settings4
+        uses: freddydk/AL-Go/Actions/ReadSettings@OnlyNeededSecrets
         with:
           shell: pwsh
 
-      - name: Read secrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@Settings4
+      - name: Read GitHub secrets
+        id: readGitHubSecrets
         env:
-          secrets: ${{ toJson(secrets) }}
+          getSecrets: 'ghTokenWorkflow'
+        run: |
+          $gitHubSecrets = '${{ toJson(secrets) }}' | ConvertFrom-Json
+          $settings = $env:settings | ConvertFrom-Json
+          $secrets = @{}
+          $env:getSecrets.Split(',') | ForEach-Object {
+            $secretName = $_
+            if ($settings.PSObject.Properties.Name -eq "$($secretName)SecretName") { $secretName = $settings."$($secretName)SecretName" }
+            if ($secretName -and $gitHubSecrets.PSObject.Properties.Name -eq $secretName) {
+              $secrets += @{ $secretName = $gitHubSecrets."$secretName" }
+            }
+          }
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "gitHubSecrets=$($secrets | ConvertTo-Json -compress)"
+
+      - name: Read secrets
+        uses: freddydk/AL-Go/Actions/ReadSecrets@OnlyNeededSecrets
+
+        env:
+          secrets: ${{ steps.readGitHubSecrets.outputs.gitHubSecrets }}
         with:
           shell: pwsh
           secrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext,${{ steps.envName.outputs.envName }}-EnvironmentName,${{ steps.envName.outputs.envName }}_EnvironmentName,EnvironmentName,projects'
@@ -211,7 +246,7 @@ jobs:
           Write-Host "projects=$projects"
 
       - name: Deploy
-        uses: freddydk/AL-Go/Actions/Deploy@Settings4
+        uses: freddydk/AL-Go/Actions/Deploy@OnlyNeededSecrets
         env:
           AuthContext: ${{ steps.authContext.outputs.authContext }}
         with:
@@ -232,7 +267,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@Settings4
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@OnlyNeededSecrets
         with:
           shell: pwsh
           eventId: "DO0097"
