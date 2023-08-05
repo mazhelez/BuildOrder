@@ -86,7 +86,7 @@ jobs:
       - name: Read GitHub secrets
         id: readGitHubSecrets
         env:
-          getSecrets: 'ghTokenWorkflow'
+          getSecrets: 'ghTokenWorkflow,STUPID'
         run: |
           $gitHubSecrets = '${{ toJson(secrets) }}' | ConvertFrom-Json
           $settings = $env:Settings | ConvertFrom-Json
@@ -106,6 +106,7 @@ jobs:
           secrets: ${{ steps.readGitHubSecrets.outputs.gitHubSecrets }}
         with:
           shell: pwsh
+          gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: ${{ steps.DetermineDeliveryTargetSecrets.outputs.Secrets }}
 
       - name: Determine Delivery Targets
