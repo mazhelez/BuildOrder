@@ -84,9 +84,9 @@ jobs:
           useGhTokenWorkflow: ${{ github.event.inputs.useGhTokenWorkflow }}
         run: |
           $ghToken = '${{ secrets.GITHUB_TOKEN }}'
-          $secrets = $env:Secrets | ConvertFrom-Json
           if ($env:useGhTokenWorkflow -eq 'true') {
-            if ($secrets.PSObject.Properties.Name -eq 'GHTOKENWORKFLOW') {
+            $secrets = $env:Secrets | ConvertFrom-Json
+            if ($secrets.GHTOKENWORKFLOW) {
               $ghToken = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secrets.GHTOKENWORKFLOW))
             }
             else {

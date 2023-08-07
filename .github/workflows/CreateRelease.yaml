@@ -264,7 +264,7 @@ jobs:
           $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
           $nuGetContext = ''
           $secrets = $env:Secrets | ConvertFrom-Json
-          if ('${{ matrix.atype }}' -eq 'Apps' -and $secrets.PSObject.Properties.Name -eq 'nuGetContext') {
+          if ('${{ matrix.atype }}' -eq 'Apps' -and $secrets.nuGetContext) {
             $nuGetContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secrets.nuGetContext))
           }
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "nuGetContext=$nuGetContext"
@@ -288,7 +288,7 @@ jobs:
           $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
           $storageContext = ''
           $secrets = $env:Secrets | ConvertFrom-Json
-          if ('${{ matrix.atype }}' -eq 'Apps' -and $secrets.PSObject.Properties.Name -eq 'storageContext') {
+          if ('${{ matrix.atype }}' -eq 'Apps' -and $secrets.storageContext) {
             $storageContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secrets.storageContext))
           }
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "storageContext=$storageContext"
@@ -352,9 +352,9 @@ jobs:
           useGhTokenWorkflow: ${{ github.event.inputs.useGhTokenWorkflow }}
         run: |
           $ghToken = '${{ secrets.GITHUB_TOKEN }}'
-          $secrets = $env:Secrets | ConvertFrom-Json
           if ($env:useGhTokenWorkflow -eq 'true') {
-            if ($secrets.PSObject.Properties.Name -eq 'GHTOKENWORKFLOW') {
+            $secrets = $env:Secrets | ConvertFrom-Json
+            if ($secrets.GHTOKENWORKFLOW) {
               $ghToken = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secrets.GHTOKENWORKFLOW))
             }
             else {
