@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@OnlyNeededSecrets2",
+  "templateUrl": "https://github.com/freddydk/AL-Go@OnlyNeededSecrets",
   "useProjectDependencies": true,
   "useCompilerFolder": true,
   "doNotPublishApps": true,
