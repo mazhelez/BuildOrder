@@ -1,6 +1,7 @@
 {
   "type": "PTE",
   "templateUrl": "https://github.com/freddydk/AL-Go@ApiVersion",
+  "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
   "useCompilerFolder": true,
   "doNotPublishApps": true,
