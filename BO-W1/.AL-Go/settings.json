@@ -3,20 +3,5 @@
   "appFolders": [],
   "testFolders": [],
   "repoVersion": "3.0",
-  "artifact": "https://bcartifacts.azureedge.net/sandbox/22.4.59114.59574/w1",
-      "appDependencyProbingPaths":  [
-                                      {
-                                          "authTokenSecret":  "GHTOKENWORKFLOW",
-                                          "projects":  "*",
-                                          "release_status":  "release",
-                                          "repo":  "https://github.com/prymeGlobal/prymeSystem",
-                                          "version":  "latest"
-                                      },
-                                      {
-                                          "authTokenSecret":  "GHTOKENWORKFLOW",
-                                          "projects":  "*",
-                                          "release_status":  "latestBuild",
-                                          "repo":  "https://github.com/prymeGlobal/prymeTime"
-                                      }
-      ]
+  "artifact": "https://bcartifacts.azureedge.net/sandbox/22.4.59114.59574/w1"
 }
