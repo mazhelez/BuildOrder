@@ -46,14 +46,14 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: microsoft/AL-Go-Actions/WorkflowInitialize@v3.2
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@issue665
         with:
           shell: pwsh
           eventId: "DO0091"
 
       - name: Read settings
         id: ReadSettings
-        uses: microsoft/AL-Go-Actions/ReadSettings@v3.2
+        uses: freddydk/AL-Go/Actions/ReadSettings@issue665
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -67,7 +67,7 @@ jobs:
           
       - name: Determine Projects To Build
         id: determineProjectsToBuild
-        uses: microsoft/AL-Go-Actions/DetermineProjectsToBuild@v3.2
+        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@issue665
         with:
           shell: pwsh
           maxBuildDepth: ${{ env.workflowDepth }}
@@ -85,7 +85,7 @@ jobs:
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "Secrets=$($deliveryTargetSecrets -join ',')"
 
       - name: Read secrets
-        uses: microsoft/AL-Go-Actions/ReadSecrets@v3.2
+        uses: freddydk/AL-Go/Actions/ReadSecrets@issue665
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -157,14 +157,14 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Read settings
-        uses: microsoft/AL-Go-Actions/ReadSettings@v3.2
+        uses: freddydk/AL-Go/Actions/ReadSettings@issue665
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           get: templateUrl
 
       - name: Check for updates to AL-Go system files
-        uses: microsoft/AL-Go-Actions/CheckForUpdates@v3.2
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@issue665
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
@@ -264,12 +264,12 @@ jobs:
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
 
       - name: Read settings
-        uses: microsoft/AL-Go-Actions/ReadSettings@v3.2
+        uses: freddydk/AL-Go/Actions/ReadSettings@issue665
         with:
           shell: pwsh
 
       - name: Read secrets
-        uses: microsoft/AL-Go-Actions/ReadSecrets@v3.2
+        uses: freddydk/AL-Go/Actions/ReadSecrets@issue665
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -354,7 +354,7 @@ jobs:
           Write-Host "projects=$projects"
 
       - name: Deploy
-        uses: microsoft/AL-Go-Actions/Deploy@v3.2
+        uses: freddydk/AL-Go/Actions/Deploy@issue665
         env:
           AuthContext: ${{ steps.authContext.outputs.authContext }}
         with:
@@ -383,12 +383,12 @@ jobs:
           path: '.artifacts'
 
       - name: Read settings
-        uses: microsoft/AL-Go-Actions/ReadSettings@v3.2
+        uses: freddydk/AL-Go/Actions/ReadSettings@issue665
         with:
           shell: pwsh
 
       - name: Read secrets
-        uses: microsoft/AL-Go-Actions/ReadSecrets@v3.2
+        uses: freddydk/AL-Go/Actions/ReadSecrets@issue665
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -405,7 +405,7 @@ jobs:
           Write-Host "deliveryContext=$deliveryContext"
 
       - name: Deliver
-        uses: microsoft/AL-Go-Actions/Deliver@v3.2
+        uses: freddydk/AL-Go/Actions/Deliver@issue665
         env:
           deliveryContext: ${{ steps.deliveryContext.outputs.deliveryContext }}
         with:
@@ -425,7 +425,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: microsoft/AL-Go-Actions/WorkflowPostProcess@v3.2
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@issue665
         with:
           shell: pwsh
           eventId: "DO0091"
