@@ -6,6 +6,5 @@
   "useCompilerFolder": true,
   "doNotPublishApps": true,
   "runs-on": "ubuntu-latest",
-  "gitHubRunner": "ubuntu-latest",
-  "test-projects" : "test,etst"
+  "gitHubRunner": "ubuntu-latest"
 }
