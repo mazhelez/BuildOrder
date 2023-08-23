@@ -105,7 +105,7 @@ jobs:
         env:
           deploymentEnvironmentsJson: ${{ steps.DetermineDeploymentEnvironments.outputs.DeploymentEnvironmentsJson }}
         run: |
-          $secrets = ${{ toJson(secrets) }} | ConvertFrom-Json
+          $secrets = '${{ toJson(secrets) }}' | ConvertFrom-Json
           $devenvs = $env:deploymentEnvironmentsJson | ConvertFrom-Json
           $secrets.PSObject.Properties.GetEnumerator() | ForEach-Object { Write-Host $_.Name } 
           $devenvs.PSObject.Properties.GetEnumerator() | ForEach-Object {
