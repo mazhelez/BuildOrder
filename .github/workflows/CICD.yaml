@@ -103,7 +103,7 @@ jobs:
 
       - name: Check Obsolete Secrets usage
         env:
-          deploymentEnvironmentsJson: ${{ needs.Initialization.outputs.deploymentEnvironmentsJson }}
+          deploymentEnvironmentsJson: ${{ steps.DetermineDeploymentEnvironments.outputs.DeploymentEnvironmentsJson }}
         run: |
           $devenvs = $env:deploymentEnvironmentsJson | ConvertFrom-Json
           $devens | Out-Host
