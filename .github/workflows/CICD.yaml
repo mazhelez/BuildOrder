@@ -102,8 +102,11 @@ jobs:
           type: 'CD'
 
       - name: Check Obsolete Secrets usage
+        env:
+          deploymentEnvironmentsJson: ${{ needs.Initialization.outputs.deploymentEnvironmentsJson }}
         run: |
-
+          $devenvs = $env:deploymentEnvironmentsJson | ConvertFrom-Json
+          $devens | Out-Host
           # Check whether secrets called envName-EnvironmentName, envName_EnvironmentName, EnvironmentName, projects exists
           # Check whether settings called envName-Projects, envName_Projects exists
           # fail build with message that these secrets are no longer supported - use DeployTo instead
