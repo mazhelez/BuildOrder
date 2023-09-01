@@ -48,11 +48,12 @@ jobs:
         uses: freddydk/AL-Go/Actions/ReadSettings@Secrets2
         with:
           shell: pwsh
-          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
 
       - name: Determine Deployment Environments
         id: DetermineDeploymentEnvironments
         uses: freddydk/AL-Go/Actions/DetermineDeploymentEnvironments@Secrets2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           shell: pwsh
           getEnvironments: ${{ github.event.inputs.environmentName }}

@@ -55,7 +55,6 @@ jobs:
         uses: freddydk/AL-Go/Actions/ReadSettings@Secrets2
         with:
           shell: pwsh
-          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           get: type
 
       - name: Determine Workflow Depth
@@ -99,6 +98,8 @@ jobs:
       - name: Determine Deployment Environments
         id: DetermineDeploymentEnvironments
         uses: freddydk/AL-Go/Actions/DetermineDeploymentEnvironments@Secrets2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           shell: pwsh
           getEnvironments: '*'
@@ -115,7 +116,6 @@ jobs:
         uses: freddydk/AL-Go/Actions/ReadSettings@Secrets2
         with:
           shell: pwsh
-          parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           get: templateUrl
 
       - name: Check for updates to AL-Go system files

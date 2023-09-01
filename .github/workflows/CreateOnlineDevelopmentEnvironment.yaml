@@ -35,7 +35,6 @@ defaults:
 env:
   ALGoOrgSettings: ${{ vars.ALGoOrgSettings }}
   ALGoRepoSettings: ${{ vars.ALGoRepoSettings }}
-  useGhTokenWorkflowForCommits: ${{ github.event.inputs.useGhTokenWorkflow }}
 
 jobs:
   Initialization:
@@ -61,7 +60,6 @@ jobs:
         uses: freddydk/AL-Go/Actions/ReadSettings@Secrets2
         with:
           shell: pwsh
-          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
 
       - name: Read secrets
         id: ReadSecrets
@@ -109,7 +107,6 @@ jobs:
         uses: freddydk/AL-Go/Actions/ReadSettings@Secrets2
         with:
           shell: pwsh
-          parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
 
       - name: Read secrets
         id: ReadSecrets
@@ -117,7 +114,8 @@ jobs:
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
-          getSecrets: 'adminCenterApiCredentials,TokenForCommits'
+          getSecrets: 'adminCenterApiCredentials,TokenForPush'
+          useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
 
       - name: Set AdminCenterApiCredentials
         id: SetAdminCenterApiCredentials
@@ -134,7 +132,7 @@ jobs:
         uses: freddydk/AL-Go/Actions/CreateDevelopmentEnvironment@Secrets2
         with:
           shell: pwsh
-          token: ${{ steps.ReadSecrets.outputs.TokenForCommits }}
+          token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
           parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
           environmentName: ${{ github.event.inputs.environmentName }}
           project: ${{ github.event.inputs.project }}
