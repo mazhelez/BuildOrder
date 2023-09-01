@@ -69,26 +69,27 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@Secrets2
+        uses: mazhelez/AL-Go/Actions/WorkflowInitialize@add-project-name
         with:
           shell: pwsh
           eventId: "DO0094"
 
       - name: Read settings
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@Secrets2
+        uses: mazhelez/AL-Go/Actions/ReadSettings@add-project-name
         with:
           shell: pwsh
+          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           get: templateUrl,repoName
 
       - name: Determine Projects
         id: determineProjects
-        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@Secrets2
+        uses: mazhelez/AL-Go/Actions/DetermineProjectsToBuild@add-project-name
         with:
           shell: pwsh
 
       - name: Check for updates to AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@Secrets2
+        uses: mazhelez/AL-Go/Actions/CheckForUpdates@add-project-name
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -173,7 +174,7 @@ jobs:
 
       - name: Prepare release notes
         id: createreleasenotes
-        uses: freddydk/AL-Go/Actions/CreateReleaseNotes@Secrets2
+        uses: mazhelez/AL-Go/Actions/CreateReleaseNotes@add-project-name
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -216,15 +217,16 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@Secrets2
+        uses: mazhelez/AL-Go/Actions/ReadSettings@add-project-name
         with:
           shell: pwsh
+          parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
 
       - name: Read secrets
-        id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@Secrets2
+        uses: mazhelez/AL-Go/Actions/ReadSecrets@add-project-name
         with:
           shell: pwsh
+          parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: 'nuGetContext,storageContext'
 
@@ -258,11 +260,22 @@ jobs:
               data: fs.readFileSync(assetPath)
             });
 
+      - name: nuGetContext
+        id: nuGetContext
+        run: |
+          $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
+          $nuGetContext = ''
+          $secrets = $env:Secrets | ConvertFrom-Json
+          if ('${{ matrix.atype }}' -eq 'Apps' -and $secrets.nuGetContext) {
+            $nuGetContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secrets.nuGetContext))
+          }
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "nuGetContext=$nuGetContext"
+
       - name: Deliver to NuGet
-        uses: freddydk/AL-Go/Actions/Deliver@Secrets2
-        if: ${{ fromJson(steps.ReadSecrets.outputs.Secrets).nuGetContext != '' }}
+        uses: mazhelez/AL-Go/Actions/Deliver@add-project-name
+        if: ${{ steps.nuGetContext.outputs.nuGetContext }}
         env:
-          Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
+          deliveryContext: ${{ steps.nuGetContext.outputs.nuGetContext }}
         with:
           shell: pwsh
           type: 'Release'
@@ -271,11 +284,22 @@ jobs:
           artifacts: ${{ github.event.inputs.appVersion }}
           atypes: 'Apps,TestApps'
 
+      - name: storageContext
+        id: storageContext
+        run: |
+          $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
+          $storageContext = ''
+          $secrets = $env:Secrets | ConvertFrom-Json
+          if ('${{ matrix.atype }}' -eq 'Apps' -and $secrets.storageContext) {
+            $storageContext = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secrets.storageContext))
+          }
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "storageContext=$storageContext"
+
       - name: Deliver to Storage
-        uses: freddydk/AL-Go/Actions/Deliver@Secrets2
-        if: ${{ fromJson(steps.ReadSecrets.outputs.Secrets).storageContext != '' }}
+        uses: mazhelez/AL-Go/Actions/Deliver@add-project-name
+        if: ${{ steps.storageContext.outputs.storageContext }}
         env:
-          Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
+          deliveryContext: ${{ steps.storageContext.outputs.storageContext }}
         with:
           shell: pwsh
           type: 'Release'
@@ -309,24 +333,43 @@ jobs:
     needs: [ CreateRelease, UploadArtifacts ]
     steps:
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@Secrets2
+        uses: mazhelez/AL-Go/Actions/ReadSettings@add-project-name
+        if: github.event.inputs.useGhTokenWorkflow == 'true'
         with:
           shell: pwsh
+          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
 
       - name: Read secrets
-        id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@Secrets2
+        uses: mazhelez/AL-Go/Actions/ReadSecrets@add-project-name
+        if: github.event.inputs.useGhTokenWorkflow == 'true'
         with:
           shell: pwsh
+          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           gitHubSecrets: ${{ toJson(secrets) }}
-          getSecrets: 'TokenForPush'
-          useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
+          getSecrets: 'ghTokenWorkflow'
+
+      - name: CalculateToken
+        id: CalculateToken
+        env:
+          useGhTokenWorkflow: ${{ github.event.inputs.useGhTokenWorkflow }}
+        run: |
+          $ghToken = '${{ secrets.GITHUB_TOKEN }}'
+          if ($env:useGhTokenWorkflow -eq 'true') {
+            $secrets = $env:Secrets | ConvertFrom-Json
+            if ($secrets.GHTOKENWORKFLOW) {
+              $ghToken = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($secrets.GHTOKENWORKFLOW))
+            }
+            else {
+              Write-Host "::Warning::GHTOKENWORKFLOW secret not found. Using GITHUB_TOKEN."
+            }
+          }
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "ghToken=$ghToken"
 
       - name: Update Version Number
-        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@Secrets2
+        uses: mazhelez/AL-Go/Actions/IncrementVersionNumber@add-project-name
         with:
           shell: pwsh
-          token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
+          token: ${{ steps.CalculateToken.outputs.ghToken }}
           parentTelemetryScopeJson: ${{ needs.CreateRelease.outputs.telemetryScopeJson }}
           versionNumber: ${{ github.event.inputs.updateVersionNumber }}
           directCommit: ${{ github.event.inputs.directCommit }}
@@ -341,7 +384,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@Secrets2
+        uses: mazhelez/AL-Go/Actions/WorkflowPostProcess@add-project-name
         with:
           shell: pwsh
           eventId: "DO0094"
