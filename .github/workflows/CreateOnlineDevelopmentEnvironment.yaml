@@ -23,10 +23,6 @@ on:
       useGhTokenWorkflow:
         description: Use GhTokenWorkflow for Pull Request/COMMIT
         type: boolean
-      tempGhTokenWorkflow:
-        description: Temporary Access Token to use as GhTokenWorkflow
-        required: false
-        default: ''
 
 permissions:
   contents: write
@@ -54,20 +50,20 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@temptoken
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
         with:
           shell: pwsh
           eventId: "DO0093"
 
       - name: Read settings
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -86,7 +82,7 @@ jobs:
             Write-Host "AdminCenterApiCredentials not provided, initiating Device Code flow"
             $ALGoHelperPath = "$([System.IO.Path]::GetTempFileName()).ps1"
             $webClient = New-Object System.Net.WebClient
-            $webClient.DownloadFile('https://raw.githubusercontent.com/freddydk/AL-Go/temptoken/Actions/AL-Go-Helper.ps1', $ALGoHelperPath)
+            $webClient.DownloadFile('https://raw.githubusercontent.com/freddydk/AL-Go/main/Actions/AL-Go-Helper.ps1', $ALGoHelperPath)
             . $ALGoHelperPath
             DownloadAndImportBcContainerHelper
             $authContext = New-BcAuthContext -includeDeviceLogin -deviceLoginTimeout ([TimeSpan]::FromSeconds(0))
@@ -104,33 +100,21 @@ jobs:
     env:
       deviceCode: ${{ needs.Initialization.outputs.deviceCode }}
     steps:
-      - name: Mask Token
-        id: tempGhTokenWorkflow
-        run: |
-          # Using github.event.inputs.tempGhTokenWorkflow will expose the token in the logs
-          $eventPath = Get-Content -Encoding UTF8 -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
-          $tempGhTokenWorkflow = $eventPath.inputs.tempGhTokenWorkflow
-          if ($tempGhTokenWorkflow) {
-            Write-Host "::add-mask::$tempGhTokenWorkflow"
-          }
-          Add-Content -Encoding UTF8 -Path $ENV:GITHUB_OUTPUT -Value "tempGhTokenWorkflow=$tempGhTokenWorkflow"
-
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: 'adminCenterApiCredentials,TokenForPush'
-          tempGhTokenWorkflow: ${{ steps.tempGhTokenWorkflow.outputs.tempGhTokenWorkflow }}
           useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
 
       - name: Set AdminCenterApiCredentials
@@ -145,7 +129,7 @@ jobs:
           Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -value "adminCenterApiCredentials=$adminCenterApiCredentials"
 
       - name: Create Development Environment
-        uses: freddydk/AL-Go/Actions/CreateDevelopmentEnvironment@temptoken
+        uses: freddydk/AL-Go/Actions/CreateDevelopmentEnvironment@main
         with:
           shell: pwsh
           token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
@@ -158,7 +142,7 @@ jobs:
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@temptoken
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
         with:
           shell: pwsh
           eventId: "DO0093"

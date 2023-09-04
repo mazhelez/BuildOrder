@@ -38,10 +38,6 @@ on:
       useGhTokenWorkflow:
         description: Use GhTokenWorkflow for Pull Request/COMMIT
         type: boolean
-      tempGhTokenWorkflow:
-        description: Temporary Access Token to use as GhTokenWorkflow
-        required: false
-        default: ''
 
 permissions:
   contents: write
@@ -73,26 +69,26 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@temptoken
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
         with:
           shell: pwsh
           eventId: "DO0094"
 
       - name: Read settings
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
           get: templateUrl,repoName
 
       - name: Determine Projects
         id: determineProjects
-        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@temptoken
+        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@main
         with:
           shell: pwsh
 
       - name: Check for updates to AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@temptoken
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@main
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -109,7 +105,7 @@ jobs:
           $sha = ''
           $allArtifacts = @()
           $page = 1
-          $headers = @{ 
+          $headers = @{
             "Authorization" = "token ${{ github.token }}"
             "X-GitHub-Api-Version" = "2022-11-28"
             "Accept" = "application/vnd.github+json"
@@ -177,7 +173,7 @@ jobs:
 
       - name: Prepare release notes
         id: createreleasenotes
-        uses: freddydk/AL-Go/Actions/CreateReleaseNotes@temptoken
+        uses: freddydk/AL-Go/Actions/CreateReleaseNotes@main
         with:
           shell: pwsh
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -220,13 +216,13 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -236,7 +232,7 @@ jobs:
         run: |
           $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
           Write-Host "Downloading artifact ${{ matrix.name}}"
-          $headers = @{ 
+          $headers = @{
             "Authorization" = "token ${{ github.token }}"
             "X-GitHub-Api-Version" = "2022-11-28"
             "Accept" = "application/vnd.github+json"
@@ -263,7 +259,7 @@ jobs:
             });
 
       - name: Deliver to NuGet
-        uses: freddydk/AL-Go/Actions/Deliver@temptoken
+        uses: freddydk/AL-Go/Actions/Deliver@main
         if: ${{ fromJson(steps.ReadSecrets.outputs.Secrets).nuGetContext != '' }}
         env:
           Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
@@ -276,7 +272,7 @@ jobs:
           atypes: 'Apps,TestApps'
 
       - name: Deliver to Storage
-        uses: freddydk/AL-Go/Actions/Deliver@temptoken
+        uses: freddydk/AL-Go/Actions/Deliver@main
         if: ${{ fromJson(steps.ReadSecrets.outputs.Secrets).storageContext != '' }}
         env:
           Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
@@ -312,37 +308,22 @@ jobs:
     runs-on: [ ubuntu-latest ]
     needs: [ CreateRelease, UploadArtifacts ]
     steps:
-      - name: Mask Token
-        id: tempGhTokenWorkflow
-        run: |
-          # Using github.event.inputs.tempGhTokenWorkflow will expose the token in the logs
-          $eventPath = Get-Content -Encoding UTF8 -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
-          $tempGhTokenWorkflow = $eventPath.inputs.tempGhTokenWorkflow
-          if ($tempGhTokenWorkflow) {
-            Write-Host "::add-mask::$tempGhTokenWorkflow"
-          }
-          Add-Content -Encoding UTF8 -Path $ENV:GITHUB_OUTPUT -Value "tempGhTokenWorkflow=$tempGhTokenWorkflow"
-
-      - name: Checkout
-        uses: actions/checkout@v3
-
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: 'TokenForPush'
-          tempGhTokenWorkflow: ${{ steps.tempGhTokenWorkflow.outputs.tempGhTokenWorkflow }}
           useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
 
       - name: Update Version Number
-        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@temptoken
+        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@main
         with:
           shell: pwsh
           token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
@@ -360,7 +341,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@temptoken
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
         with:
           shell: pwsh
           eventId: "DO0094"

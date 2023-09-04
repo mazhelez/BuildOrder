@@ -19,10 +19,6 @@ on:
       useGhTokenWorkflow:
         description: Use GhTokenWorkflow for Pull Request/COMMIT
         type: boolean
-      tempGhTokenWorkflow:
-        description: Temporary Access Token to use as GhTokenWorkflow
-        required: false
-        default: ''
 
 permissions:
   contents: write
@@ -40,44 +36,32 @@ jobs:
   IncrementVersionNumber:
     runs-on: [ ubuntu-latest ]
     steps:
-      - name: Mask Token
-        id: tempGhTokenWorkflow
-        run: |
-          # Using github.event.inputs.tempGhTokenWorkflow will expose the token in the logs
-          $eventPath = Get-Content -Encoding UTF8 -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
-          $tempGhTokenWorkflow = $eventPath.inputs.tempGhTokenWorkflow
-          if ($tempGhTokenWorkflow) {
-            Write-Host "::add-mask::$tempGhTokenWorkflow"
-          }
-          Add-Content -Encoding UTF8 -Path $ENV:GITHUB_OUTPUT -Value "tempGhTokenWorkflow=$tempGhTokenWorkflow"
-
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@temptoken
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
         with:
           shell: pwsh
           eventId: "DO0096"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSettings@main
         with:
           shell: pwsh
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@temptoken
+        uses: freddydk/AL-Go/Actions/ReadSecrets@main
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: 'TokenForPush'
-          tempGhTokenWorkflow: ${{ steps.tempGhTokenWorkflow.outputs.tempGhTokenWorkflow }}
           useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
 
       - name: Increment Version Number
-        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@temptoken
+        uses: freddydk/AL-Go/Actions/IncrementVersionNumber@main
         with:
           shell: pwsh
           token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
@@ -85,10 +69,10 @@ jobs:
           project: ${{ github.event.inputs.project }}
           versionNumber: ${{ github.event.inputs.versionNumber }}
           directCommit: ${{ github.event.inputs.directCommit }}
-  
+
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@temptoken
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
         with:
           shell: pwsh
           eventId: "DO0096"
