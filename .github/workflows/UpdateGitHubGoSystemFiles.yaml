@@ -4,13 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       templateUrl:
-        description: Template Repository URL (current is https://github.com/freddydk/AL-Go@main)
+        description: Template Repository URL (current is https://github.com/freddydk/AL-Go@temptoken)
         required: false
         default: ''
       directCommit:
         description: Direct COMMIT (Y/N)
         required: false
         default: 'N'
+      tempGhTokenWorkflow:
+        description: Temporary Personal Access Token to use as GhTokenWorkflow
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -27,29 +31,42 @@ jobs:
   UpdateALGoSystemFiles:
     runs-on: [ windows-latest ]
     steps:
+      - name: Mask Token
+        id: tempGhTokenWorkflow
+        run: |
+          $eventPath = Get-Content -Encoding UTF8 -Path $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+          $tempGhTokenWorkflow = $eventPath.inputs.tempGhTokenWorkflow
+          if ($tempGhTokenWorkflow) {
+            Write-Host "::add-mask::$tempGhTokenWorkflow"
+            $tempGhTokenWorkflow = [Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($tempGhTokenWorkflow))
+            Write-Host "::add-mask::$tempGhTokenWorkflow"
+          }
+          Add-Content -Encoding UTF8 -Path $ENV:GITHUB_OUTPUT -Value "tempGhTokenWorkflow=$tempGhTokenWorkflow"
+
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@temptoken
         with:
           shell: powershell
           eventId: "DO0098"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
+        uses: freddydk/AL-Go/Actions/ReadSettings@temptoken
         with:
           shell: powershell
           get: templateUrl
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@main
+        uses: freddydk/AL-Go/Actions/ReadSecrets@temptoken
         with:
           shell: powershell
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: 'ghTokenWorkflow'
+          tempGhTokenWorkflow: ${{ steps.tempGhTokenWorkflow.outputs.tempGhTokenWorkflow }}
 
       - name: Override templateUrl
         env:
@@ -77,7 +94,7 @@ jobs:
           Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "DirectCommit=$directCommit"
 
       - name: Update AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@main
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@temptoken
         with:
           shell: powershell
           parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
@@ -88,7 +105,7 @@ jobs:
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@main
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@temptoken
         with:
           shell: powershell
           eventId: "DO0098"
