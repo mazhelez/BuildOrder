@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@issue683",
+  "templateUrl": "https://github.com/freddydk/AL-Go@PSScriptAnalyzer",
   "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
   "useCompilerFolder": true,
