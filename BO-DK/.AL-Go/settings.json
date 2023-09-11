@@ -3,5 +3,6 @@
   "appFolders": [],
   "testFolders": [],
   "repoVersion": "3.0",
-  "artifact": "https://bcartifacts.azureedge.net/sandbox/22.4.59114.59574/dk"
+  "artifact": "https://bcartifacts.azureedge.net/sandbox/22.4.59114.59574/dk",
+    "githubRunner": "windows-latest"
 }
