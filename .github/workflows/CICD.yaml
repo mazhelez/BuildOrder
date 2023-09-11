@@ -105,6 +105,17 @@ jobs:
           getEnvironments: '*'
           type: 'CD'
 
+  MyJob:
+    needs: [ Initialization, CheckForUpdates ]
+    runs-on: [ ubuntu-latest ]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Determine Workflow Depth
+        run: |
+          Write-Host "This is my job"
+
   CheckForUpdates:
     runs-on: [ ubuntu-latest ]
     needs: [ Initialization ]
@@ -126,7 +137,7 @@ jobs:
           templateUrl: ${{ env.templateUrl }}
 
   Build1:
-    needs: [ Initialization ]
+    needs: [ Initialization, MyJob ]
     if: (!failure()) && (!cancelled()) && fromJson(needs.Initialization.outputs.buildOrderJson)[0].projectsCount > 0
     strategy:
       matrix:
