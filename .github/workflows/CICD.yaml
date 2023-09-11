@@ -105,6 +105,54 @@ jobs:
           getEnvironments: '*'
           type: 'CD'
 
+  Deploy:
+    needs: [ Initialization, Build ]
+    if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.environmentCount > 0
+    strategy: ${{ fromJson(needs.Initialization.outputs.environmentsMatrixJson) }}
+    runs-on: ${{ fromJson(matrix.os) }}
+    name: Deploy to ${{ matrix.environment }}
+    environment:
+      name: ${{ matrix.environment }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: '.artifacts'
+
+      - name: Read settings
+        uses: freddydk/AL-Go/Actions/ReadSettings@issue700
+        with:
+          shell: pwsh
+
+      - name: EnvName
+        id: envName
+        run: |
+          $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
+          $envName = '${{ matrix.environment }}'.split(' ')[0]
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
+
+      - name: Read secrets
+        id: ReadSecrets
+        uses: freddydk/AL-Go/Actions/ReadSecrets@issue700
+        with:
+          shell: pwsh
+          gitHubSecrets: ${{ toJson(secrets) }}
+          getSecrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext,${{ steps.envName.outputs.envName }}-EnvironmentName,${{ steps.envName.outputs.envName }}_EnvironmentName,EnvironmentName,projects'
+
+      - name: Deploy
+        uses: freddydk/AL-Go/Actions/Deploy@issue700
+        env:
+          Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
+        with:
+          shell: pwsh
+          environmentName: ${{ matrix.environment }}
+          artifacts: '.artifacts'
+          type: 'CD'
+          deploymentEnvironmentsJson: ${{ needs.Initialization.outputs.deploymentEnvironmentsJson }}
+
   CheckForUpdates:
     runs-on: [ ubuntu-latest ]
     needs: [ Initialization ]
@@ -196,54 +244,6 @@ jobs:
       publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
       signArtifacts: true
       useArtifactCache: true
-
-  Deploy:
-    needs: [ Initialization, Build ]
-    if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.environmentCount > 0
-    strategy: ${{ fromJson(needs.Initialization.outputs.environmentsMatrixJson) }}
-    runs-on: ${{ fromJson(matrix.os) }}
-    name: Deploy to ${{ matrix.environment }}
-    environment:
-      name: ${{ matrix.environment }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Download artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: '.artifacts'
-
-      - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@issue700
-        with:
-          shell: pwsh
-
-      - name: EnvName
-        id: envName
-        run: |
-          $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
-          $envName = '${{ matrix.environment }}'.split(' ')[0]
-          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "envName=$envName"
-
-      - name: Read secrets
-        id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@issue700
-        with:
-          shell: pwsh
-          gitHubSecrets: ${{ toJson(secrets) }}
-          getSecrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext,${{ steps.envName.outputs.envName }}-EnvironmentName,${{ steps.envName.outputs.envName }}_EnvironmentName,EnvironmentName,projects'
-
-      - name: Deploy
-        uses: freddydk/AL-Go/Actions/Deploy@issue700
-        env:
-          Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
-        with:
-          shell: pwsh
-          environmentName: ${{ matrix.environment }}
-          artifacts: '.artifacts'
-          type: 'CD'
-          deploymentEnvironmentsJson: ${{ needs.Initialization.outputs.deploymentEnvironmentsJson }}
 
   Deliver:
     needs: [ Initialization, Build ]
