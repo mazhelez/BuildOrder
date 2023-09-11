@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@algoevents",
+  "templateUrl": "https://github.com/freddydk/AL-Go@placeholders",
   "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
   "useCompilerFolder": true,
