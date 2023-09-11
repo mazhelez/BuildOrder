@@ -245,6 +245,22 @@ jobs:
       signArtifacts: true
       useArtifactCache: true
 
+  PostProcess:
+    if: (!cancelled())
+    runs-on: [ ubuntu-latest ]
+    needs: [ Initialization, Build, Deploy, Deliver ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Finalize the workflow
+        id: PostProcess
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@issue700
+        with:
+          shell: pwsh
+          eventId: "DO0091"
+          telemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+
   Deliver:
     needs: [ Initialization, Build ]
     if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.deliveryTargetsJson != '[]'
@@ -287,18 +303,3 @@ jobs:
           deliveryTarget: ${{ matrix.deliveryTarget }}
           artifacts: '.artifacts'
 
-  PostProcess:
-    if: (!cancelled())
-    runs-on: [ ubuntu-latest ]
-    needs: [ Initialization, Build, Deploy, Deliver ]
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
-      - name: Finalize the workflow
-        id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@issue700
-        with:
-          shell: pwsh
-          eventId: "DO0091"
-          telemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
