@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@placeholders",
+  "templateUrl": "https://github.com/freddydk/AL-Go@issue700",
   "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
   "useCompilerFolder": true,
