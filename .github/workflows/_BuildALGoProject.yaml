@@ -136,7 +136,9 @@ jobs:
           # All steps between PreBuild.Start and PreBuild.End will be preserved when updating AL-Go System Files
           # Note that changes to the base workflow might cause your steps in this section to break, please update them accordingly
           Write-Host "::group::PreBuild.Start"
-
+      - name: Custom step
+        run: |
+          Write-Host "This is my custom step"
       - name: PreBuild.End
         if: false
         run: Write-Host "::group::PreBuild.End"
