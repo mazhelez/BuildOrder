@@ -46,6 +46,7 @@ env:
 
 jobs:
   CreateTestApp:
+    needs: [ ]
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
