@@ -126,7 +126,7 @@ jobs:
           templateUrl: ${{ env.templateUrl }}
 
   Build1:
-    needs: [ Initialization, CustomJob-MyJob ]
+    needs: [ CustomJob-MyJob,Initialization ]
     if: (!failure()) && (!cancelled()) && fromJson(needs.Initialization.outputs.buildOrderJson)[0].projectsCount > 0
     strategy:
       matrix:
@@ -150,7 +150,7 @@ jobs:
       useArtifactCache: true
 
   Build2:
-    needs: [ Initialization, Build1 ]
+    needs: [ Initialization, CustomJob-MyJob1, CustomJob-MyJob, Build1 ]
     if: (!failure()) && (!cancelled()) && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && fromJson(needs.Initialization.outputs.buildOrderJson)[1].projectsCount > 0
     strategy:
       matrix:
@@ -288,6 +288,18 @@ jobs:
           artifacts: '.artifacts'
 
   CustomJob-MyJob:
+    name: My Job
+    needs: [ Initialization, CheckForUpdates, CustomJob-MyJob1 ]
+    runs-on: [ ubuntu-latest ]
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - name: Determine Workflow Depth
+        run: |
+          Write-Host "This is my job"
+
+  CustomJob-MyJob1:
     name: My Job
     needs: [ Initialization, CheckForUpdates ]
     runs-on: [ ubuntu-latest ]
