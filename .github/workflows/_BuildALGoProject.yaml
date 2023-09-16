@@ -95,11 +95,11 @@ jobs:
 
       - name: CustomStep Test1
         run: |
-          Write-Host "test1"
+          Write-Host "test1 after settings"
 
       - name: CustomStep Test2
         run: |
-          Write-Host "test2"
+          Write-Host "test2 after settings"
 
       - name: Read secrets
         id: ReadSecrets
@@ -148,8 +148,12 @@ jobs:
           # All steps between PreBuild.Start and PreBuild.End will be preserved when updating AL-Go System Files
           # Note that changes to the base workflow might cause your steps in this section to break, please update them accordingly
 
-      - name: CustomStepPreBuild
-        id: CustomStepXX
+      - name: CustomStepPreBuild1
+        if: false
+        run: |
+          # End of custom PreBuild block
+
+      - name: CustomStepPreBuild2
         if: false
         run: |
           # End of custom PreBuild block
@@ -277,16 +281,10 @@ jobs:
           parentTelemetryScopeJson: ${{ inputs.parentTelemetryScopeJson }}
           project: ${{ inputs.project }}
 
-      - name: Finalize.Start
+      - name: CustomStepPostBuild2
         if: false
         run: |
-          # All steps between Finalize.Start and Finalize.End will be preserved when updating AL-Go System Files
-          # Note that changes to the base workflow might cause your steps in this section to break, please update them accordingly
-  
-      - name: Finalize.End
-        if: false
-        run: |
-            # End of custom Finalize block
+          # End of custom PreBuild block
 
       - name: Cleanup
         if: always()
