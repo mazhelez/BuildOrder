@@ -93,16 +93,13 @@ jobs:
           project: ${{ inputs.project }}
           get: useCompilerFolder,keyVaultCodesignCertificateName,doNotSignApps,artifact
 
-      - name: Initialize.Start
-        if: false
+      - name: CustomStep Test1
         run: |
-          # All steps between Initialize.Start and Initialize.End will be preserved when updating AL-Go System Files
-          # Note that changes to the base workflow might cause your steps in this section to break, please update them accordingly
-  
-      - name: Initialize.End
-        if: false
+          Write-Host "test1"
+
+      - name: CustomStep Test2
         run: |
-          # End of custom Initialize block
+          Write-Host "test2"
 
       - name: Read secrets
         id: ReadSecrets
@@ -112,6 +109,10 @@ jobs:
           shell: ${{ inputs.shell }}
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: '${{ inputs.secrets }},appDependencyProbingPathsSecrets'
+
+      - name: CustomStep Test3
+        run: |
+          Write-Host "test"
 
       - name: Determine ArtifactUrl
         uses: freddydk/AL-Go/Actions/DetermineArtifactUrl@placeholders
@@ -147,13 +148,13 @@ jobs:
           # All steps between PreBuild.Start and PreBuild.End will be preserved when updating AL-Go System Files
           # Note that changes to the base workflow might cause your steps in this section to break, please update them accordingly
 
-      - name: PreBuild.End
+      - name: CustomStepPreBuild
+        id: CustomStepXX
         if: false
         run: |
           # End of custom PreBuild block
 
-      - name: Run pipeline
-        id: RunPipeline
+      - name: Build
         uses: freddydk/AL-Go/Actions/RunPipeline@placeholders
         env:
           Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
@@ -167,16 +168,10 @@ jobs:
           installAppsJson: ${{ steps.DownloadProjectDependencies.outputs.DownloadedApps }}
           installTestAppsJson: ${{ steps.DownloadProjectDependencies.outputs.DownloadedTestApps }}
 
-      - name: PostBuild.Start
+      - name: CustomStepPostBuild
         if: false
         run: |
-          # All steps between PostBuild.Start and PostBuild.End will be preserved when updating AL-Go System Files
-          # Note that changes to the base workflow might cause your steps in this section to break, please update them accordingly
-  
-      - name: PostBuild.End
-        if: false
-        run: |
-          # End of custom PostBuild block
+          # End of custom PreBuild block
 
       - name: Sign
         if: inputs.signArtifacts && env.doNotSignApps == 'False' && env.keyVaultCodesignCertificateName != ''
