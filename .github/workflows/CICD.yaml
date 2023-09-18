@@ -127,7 +127,7 @@ jobs:
           downloadLatest: true
 
   Build1:
-    needs: [ Initialization, CustomJob-MyJob1 ]
+    needs: [ Initialization, CustomJob-MyJob, CustomJob-MyJob1 ]
     if: (!failure()) && (!cancelled()) && fromJson(needs.Initialization.outputs.buildOrderJson)[0].projectsCount > 0
     strategy:
       matrix:
@@ -151,7 +151,7 @@ jobs:
       useArtifactCache: true
 
   Build2:
-    needs: [ Initialization, Build1, CustomJob-MyJob1 ]
+    needs: [ Initialization, Build1, CustomJob-MyJob, CustomJob-MyJob1 ]
     if: (!failure()) && (!cancelled()) && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && fromJson(needs.Initialization.outputs.buildOrderJson)[1].projectsCount > 0
     strategy:
       matrix:
