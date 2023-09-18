@@ -127,7 +127,7 @@ jobs:
           downloadLatest: true
 
   Build1:
-    needs: [ Initialization, CustomJob-MyJob, CustomJob-MyJob1 ]
+    needs: [ Initialization, CustomJob-MyJob1 ]
     if: (!failure()) && (!cancelled()) && fromJson(needs.Initialization.outputs.buildOrderJson)[0].projectsCount > 0
     strategy:
       matrix:
@@ -151,7 +151,7 @@ jobs:
       useArtifactCache: true
 
   Build2:
-    needs: [ Initialization, Build1, CustomJob-MyJob, CustomJob-MyJob1 ]
+    needs: [ Initialization, Build1, CustomJob-MyJob1 ]
     if: (!failure()) && (!cancelled()) && (needs.Build1.result == 'success' || needs.Build1.result == 'skipped') && fromJson(needs.Initialization.outputs.buildOrderJson)[1].projectsCount > 0
     strategy:
       matrix:
@@ -306,7 +306,7 @@ jobs:
 
   CustomJob-MyJob:
     name: My Job
-    needs: [ Initialization, CheckForUpdates, CustomJob-MyJob1 ]
+    needs: [ Initialization, CheckForUpdates ]
     runs-on: [ ubuntu-latest ]
     defaults:
       run:
@@ -314,7 +314,7 @@ jobs:
     steps:
       - name: Determine Workflow Depth
         run: |
-          Write-Host "This is my job"
+          Write-Host "This is my job from the template"
 
   CustomJob-MyJob1:
     name: My Job
