@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/.AL-Go@main",
+  "templateUrl": "https://github.com/freddydk/AL-Go@custom",
   "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
   "useCompilerFolder": true,
@@ -10,5 +10,5 @@
   "excludeEnvironments": [
     "test"
   ],
-  "templateSha": "6bde5337afd7f243173dbb70769412f0145760b0"
+  "templateSha": "bf0691d510423b5b8f8abf0c26721cb610ce6ef4"
 }
