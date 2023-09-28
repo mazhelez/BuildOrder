@@ -117,8 +117,6 @@ jobs:
       - name: Determine ArtifactUrl
         uses: freddydk/AL-Go/Actions/DetermineArtifactUrl@custom
         id: determineArtifactUrl
-        env:
-          Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
         with:
           shell: ${{ inputs.shell }}
           parentTelemetryScopeJson: ${{ inputs.parentTelemetryScopeJson }}
