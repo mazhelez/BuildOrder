@@ -6,7 +6,7 @@
   "useCompilerFolder": true,
   "doNotPublishApps": true,
   "runs-on": "ubuntu-latest",
-  "gitHubRunner": "self-hosted,Windows",
+  "gitHubRunner": "ubuntu-latest",
   "excludeEnvironments": [
     "test"
   ],
