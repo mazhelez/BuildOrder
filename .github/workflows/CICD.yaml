@@ -209,6 +209,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: '.artifacts'
+
+      - name: Read settings
+        uses: microsoft/AL-Go-Actions/ReadSettings@main
+        with:
+          shell: powershell
+
       - name: Setup Pages
         uses: actions/configure-pages@v3
 
@@ -319,7 +329,7 @@ jobs:
   PostProcess:
     if: (!cancelled())
     runs-on: [ ubuntu-latest ]
-    needs: [ Initialization, Build, Deploy, Deliver ]
+    needs: [ Initialization, Build, Deploy, Deliver, DeployALDoc ]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
