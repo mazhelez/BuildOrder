@@ -217,7 +217,7 @@ jobs:
       - name: Read settings
         uses: microsoft/AL-Go-Actions/ReadSettings@main
         with:
-          shell: powershell
+          shell: pwsh
 
       - name: Setup Pages
         uses: actions/configure-pages@v3
