@@ -200,7 +200,7 @@ jobs:
   DeployALDoc:
     needs: [ Initialization, Build ]
     if: always() && needs.Build.result == 'Success'
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     name: Deploy ALDoc Documentation
     environment:
       name: github-pages
@@ -229,6 +229,8 @@ jobs:
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v2
+        with:
+          path: ".aldoc/_site/"
 
       - name: Deploy to GitHub Pages
         id: deployment
