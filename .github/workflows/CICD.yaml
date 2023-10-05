@@ -16,6 +16,8 @@ defaults:
 permissions:
   contents: read
   actions: read
+  pages: write
+  id-token: write
 
 env:
   workflowDepth: 3
@@ -232,6 +234,8 @@ jobs:
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v2
+        with:
+          path: ".aldoc/_site/"
 
       - name: Deploy to GitHub Pages
         if: needs.Initialization.outputs.deployALDocArtifact == 1
