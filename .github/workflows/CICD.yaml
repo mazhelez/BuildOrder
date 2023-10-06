@@ -14,7 +14,7 @@ defaults:
     shell: pwsh
 
 permissions:
-  contents: read
+  contents: write
   actions: read
   pages: write
   id-token: write
@@ -148,7 +148,7 @@ jobs:
       buildMode: ${{ matrix.buildMode }}
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,codeSignCertificateUrl,*codeSignCertificatePassword,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
-      publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
+      publishThisBuildArtifacts: true
       publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
       signArtifacts: true
       useArtifactCache: true
@@ -172,7 +172,7 @@ jobs:
       buildMode: ${{ matrix.buildMode }}
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,codeSignCertificateUrl,*codeSignCertificatePassword,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
-      publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
+      publishThisBuildArtifacts: true
       publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
       signArtifacts: true
       useArtifactCache: true
@@ -196,7 +196,7 @@ jobs:
       buildMode: ${{ matrix.buildMode }}
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,codeSignCertificateUrl,*codeSignCertificatePassword,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
-      publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
+      publishThisBuildArtifacts: true
       publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
       signArtifacts: true
       useArtifactCache: true
