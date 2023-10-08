@@ -11,5 +11,6 @@
     "test"
   ],
   "templateSha": "d2f5210f149946d94776680c77a619db17fc4b5b",
-  "deployALDocArtifact": true
+  "deployALDocArtifact": true,
+  "alDocMaxReleases" = 2
 }
