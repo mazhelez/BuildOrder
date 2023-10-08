@@ -15,7 +15,6 @@
     "ExcludeProjects": [ "test"],
     "MaxReleases": 5,
     "Footer": "this is the footer",
-    "Header": "Header",
-    "
+    "Header": "Header"
   }
 }
