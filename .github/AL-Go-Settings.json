@@ -12,6 +12,7 @@
   ],
   "templateSha": "d2f5210f149946d94776680c77a619db17fc4b5b",
   "ALDoc": {
+    "ContinuousDeployment": true,
     "ExcludeProjects": [ "test"],
     "MaxReleases": 5,
     "Footer": "this is the footer",
