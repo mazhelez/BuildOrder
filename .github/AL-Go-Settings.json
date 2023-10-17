@@ -2,14 +2,14 @@
   "type": "PTE",
   "templateUrl": "https://github.com/freddydk/AL-Go@main",
   "CICDPushBranches": [
-      "main",
-      "release/*",
-      "feature/*",
-      "development"
+    "main",
+    "release/*",
+    "feature/*",
+    "development"
   ],
   "CICDPullRequestBranches": [
-      "main",
-      "development"
+    "main",
+    "development"
   ],
   "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
