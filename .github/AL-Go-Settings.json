@@ -7,6 +7,10 @@
       "feature/*",
       "development"
   ],
+  "CICDPullRequestBranches": [
+      "main",
+      "development"
+  ],
   "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
   "useCompilerFolder": true,
