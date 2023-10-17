@@ -11,6 +11,13 @@
     "test"
   ],
   "templateSha": "d2f5210f149946d94776680c77a619db17fc4b5b",
-  "deployALDocArtifact": true,
-  "alDocMaxReleases": 2
+  "ALDoc": {
+    "ContinuousDeployment": true,
+    "ExcludeProjects": [ "test"],
+    "MaxReleases": 5,
+    "Footer": "This is the footer",
+    "Header": "Header",
+    "DefaultIndexMD": "## This is the teference documentation\n\n{RELEASENOTES}"
+
+  }
 }
