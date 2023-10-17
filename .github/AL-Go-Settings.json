@@ -1,6 +1,12 @@
 {
   "type": "PTE",
   "templateUrl": "https://github.com/freddydk/AL-Go@main",
+  "CICDPushBranches": [
+      "main",
+      "release/*",
+      "feature/*",
+      "development"
+  ],
   "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
   "useCompilerFolder": true,
