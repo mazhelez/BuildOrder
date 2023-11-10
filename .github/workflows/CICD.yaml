@@ -231,6 +231,7 @@ jobs:
         uses: freddydk/AL-Go/Actions/BuildALDoc@ALDoc
         with:
           shell: pwsh
+          artifacts: '.artifacts'
 
       - name: Upload pages artifact
         uses: actions/upload-pages-artifact@v2
