@@ -27,7 +27,7 @@ jobs:
     if: (github.event.pull_request.base.repo.full_name != github.event.pull_request.head.repo.full_name) && (github.event_name != 'pull_request')
     runs-on: [ windows-latest ]
     steps:
-      - uses: freddydk/AL-Go/Actions/VerifyPRChanges@main
+      - uses: freddydk/AL-Go/Actions/VerifyPRChanges@ALDoc
 
   Initialization:
     needs: [ PregateCheck ]
@@ -50,14 +50,14 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@main
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@ALDoc
         with:
           shell: powershell
           eventId: "DO0104"
 
       - name: Read settings
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@main
+        uses: freddydk/AL-Go/Actions/ReadSettings@ALDoc
         with:
           shell: powershell
 
@@ -68,7 +68,7 @@ jobs:
 
       - name: Determine Projects To Build
         id: determineProjectsToBuild
-        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@main
+        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@ALDoc
         with:
           shell: powershell
           maxBuildDepth: ${{ env.workflowDepth }}
@@ -94,6 +94,7 @@ jobs:
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
       publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
+      artifactsNameSuffix: 'PR${{ github.event.number }}'
 
   Build2:
     needs: [ Initialization, Build1 ]
@@ -116,6 +117,7 @@ jobs:
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
       publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
+      artifactsNameSuffix: 'PR${{ github.event.number }}'
 
   Build:
     needs: [ Initialization, Build2, Build1 ]
@@ -138,6 +140,7 @@ jobs:
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
       publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
+      artifactsNameSuffix: 'PR${{ github.event.number }}'
 
   StatusCheck:
     runs-on: [ windows-latest ]
@@ -147,7 +150,7 @@ jobs:
     steps:
       - name: Pull Request Status Check
         id: PullRequestStatusCheck
-        uses: freddydk/AL-Go/Actions/PullRequestStatusCheck@main
+        uses: freddydk/AL-Go/Actions/PullRequestStatusCheck@ALDoc
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
