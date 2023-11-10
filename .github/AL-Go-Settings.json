@@ -30,6 +30,6 @@
     "MaxReleases": 5,
     "Footer": "This is the footer",
     "Header": "Header",
-    "DefaultIndexMD": "## This is the teference documentation\n\n{RELEASENOTES}"
+    "DefaultIndexMD": "## This is the reference documentation\n\n{RELEASENOTES}"
   }
 }
