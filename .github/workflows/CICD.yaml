@@ -205,7 +205,7 @@ jobs:
     needs: [ Initialization, Build ]
     if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.generateALDocArtifact == 1
     runs-on: windows-latest
-    name: Deploy ALDoc Documentation
+    name: Deploy Reference Documentation
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -227,7 +227,7 @@ jobs:
         if: needs.Initialization.outputs.deployALDocArtifact == 1
         uses: actions/configure-pages@v3
 
-      - name: Build ALDoc Documentation
+      - name: Build Reference Documentation
         uses: freddydk/AL-Go/Actions/BuildALDoc@ALDoc
         with:
           shell: pwsh
