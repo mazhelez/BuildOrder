@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@ALDoc",
+  "templateUrl": "https://github.com/freddydk/AL-Go@CheckForUpdates",
   "CICDPushBranches": [
     "main",
     "release/*",
