@@ -21,17 +21,16 @@ on:
         required: true
         default: '50000..99999'
       sampleCode:
-        description: Include Sample code?
-        type: boolean
-        default: true
+        description: Include Sample code (Y/N)
+        required: false
+        default: 'Y'
       directCommit:
-        description: Direct Commit?
-        type: boolean
-        default: false
+        description: Direct COMMIT (Y/N)
+        required: false
+        default: 'N'
       useGhTokenWorkflow:
-        description: Use GhTokenWorkflow for PR/Commit?
+        description: Use GhTokenWorkflow for Pull Request/COMMIT
         type: boolean
-        default: false
 
 permissions:
   contents: write
@@ -47,32 +46,26 @@ env:
 
 jobs:
   CreateTestApp:
-    needs: [ ]
     runs-on: [ ubuntu-latest ]
     steps:
-      - name: Dump Workflow Information
-        uses: freddydk/AL-Go/Actions/DumpWorkflowInfo@CheckForUpdates
-        with:
-          shell: pwsh
-
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@ALDoc2
         with:
           shell: pwsh
           eventId: "DO0095"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/ReadSettings@ALDoc2
         with:
           shell: pwsh
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/ReadSecrets@ALDoc2
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -80,7 +73,7 @@ jobs:
           useGhTokenWorkflowForPush: '${{ github.event.inputs.useGhTokenWorkflow }}'
 
       - name: Creating a new test app
-        uses: freddydk/AL-Go/Actions/CreateApp@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/CreateApp@ALDoc2
         with:
           shell: pwsh
           token: ${{ steps.ReadSecrets.outputs.TokenForPush }}
@@ -95,7 +88,7 @@ jobs:
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@ALDoc2
         with:
           shell: pwsh
           eventId: "DO0095"

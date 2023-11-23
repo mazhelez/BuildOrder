@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@CheckForUpdates",
+  "templateUrl": "https://github.com/freddydk/AL-Go@ALDoc2",
   "CICDPushBranches": [
     "main",
     "release/*",
@@ -21,7 +21,7 @@
     "test"
   ],
   "alwaysBuildAllProjects": true,
-  "templateSha": "656e8497b93f17da3a9deaad25fbaf22d504db98",
+  "templateSha": "df8cd20abbb4cbfd9c3327502cadcf97457a5668",
   "ALDoc": {
     "ContinuousDeployment": true,
     "ExcludeProjects": [
