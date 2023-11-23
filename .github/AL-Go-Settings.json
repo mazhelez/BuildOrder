@@ -21,7 +21,6 @@
     "test"
   ],
   "alwaysBuildAllProjects": true,
-  "templateSha": "df8cd20abbb4cbfd9c3327502cadcf97457a5668",
   "ALDoc": {
     "ContinuousDeployment": true,
     "ExcludeProjects": [
