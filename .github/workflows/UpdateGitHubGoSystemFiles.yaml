@@ -4,17 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       templateUrl:
-        description: Template Repository URL (current is https://github.com/freddydk/AL-Go@CheckForUpdates)
+        description: Template Repository URL (current is https://github.com/freddydk/AL-Go@ALDoc)
         required: false
         default: ''
-      downloadLatest:
-        description: Download latest from template repository
-        type: boolean
-        default: true
       directCommit:
-        description: Direct Commit?
-        type: boolean
-        default: false
+        description: Direct COMMIT (Y/N)
+        required: false
+        default: 'N'
 
 permissions:
   contents: read
@@ -29,33 +25,27 @@ env:
 
 jobs:
   UpdateALGoSystemFiles:
-    needs: [ ]
     runs-on: [ windows-latest ]
     steps:
-      - name: Dump Workflow Information
-        uses: freddydk/AL-Go/Actions/DumpWorkflowInfo@CheckForUpdates
-        with:
-          shell: powershell
-
       - name: Checkout
         uses: actions/checkout@v3
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/WorkflowInitialize@ALDoc
         with:
           shell: powershell
           eventId: "DO0098"
 
       - name: Read settings
-        uses: freddydk/AL-Go/Actions/ReadSettings@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/ReadSettings@ALDoc
         with:
           shell: powershell
           get: templateUrl
 
       - name: Read secrets
         id: ReadSecrets
-        uses: freddydk/AL-Go/Actions/ReadSecrets@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/ReadSecrets@ALDoc
         with:
           shell: powershell
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -72,37 +62,33 @@ jobs:
             Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "templateUrl=$templateUrl"
           }
 
-      - name: Calculate Input
+      - name: Calculate DirectCommit
         env:
-          directCommit: '${{ github.event.inputs.directCommit }}'
-          downloadLatest: ${{ github.event.inputs.downloadLatest }}
+          directCommit: ${{ github.event.inputs.directCommit }}
           eventName: ${{ github.event_name }}
         run: |
           $errorActionPreference = "Stop"; $ProgressPreference = "SilentlyContinue"; Set-StrictMode -Version 2.0
           $directCommit = $ENV:directCommit
-          $downloadLatest = $ENV:downloadLatest
           Write-Host $ENV:eventName
           if ($ENV:eventName -eq 'schedule') {
-            Write-Host "Running Update AL-Go System Files on a schedule. Setting DirectCommit and DownloadLatest to true"
-            $directCommit = 'true'
-            $downloadLatest = 'true'
+            Write-Host "Running Update AL-Go System Files on a schedule. Setting DirectCommit = Y"
+            $directCommit = 'Y'
           }
-          Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "directCommit=$directCommit"
-          Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "downloadLatest=$downloadLatest"
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_ENV -Value "DirectCommit=$directCommit"
 
       - name: Update AL-Go system files
-        uses: freddydk/AL-Go/Actions/CheckForUpdates@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/CheckForUpdates@ALDoc
         with:
           shell: powershell
+          parentTelemetryScopeJson: ${{ steps.init.outputs.telemetryScopeJson }}
           token: ${{ fromJson(steps.ReadSecrets.outputs.Secrets).ghTokenWorkflow }}
-          downloadLatest: ${{ env.downloadLatest }}
-          update: 'Y'
+          Update: Y
           templateUrl: ${{ env.templateUrl }}
           directCommit: ${{ env.directCommit }}
 
       - name: Finalize the workflow
         if: always()
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@CheckForUpdates
+        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@ALDoc
         with:
           shell: powershell
           eventId: "DO0098"

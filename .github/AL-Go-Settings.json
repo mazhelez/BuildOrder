@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@CheckForUpdates",
+  "templateUrl": "https://github.com/freddydk/AL-Go@ALDoc",
   "CICDPushBranches": [
     "main",
     "release/*",
@@ -31,5 +31,5 @@
     "Header": "Header",
     "DefaultIndexMD": "## This is the reference documentation\n\n{RELEASENOTES}"
   },
-  "templateSha": "20ba285e54e49f49d91dc47e8010eadd26cf50fc"
+  "templateSha": "b1214e1a5af978d75e02883bc5942dd835e6734f"
 }
