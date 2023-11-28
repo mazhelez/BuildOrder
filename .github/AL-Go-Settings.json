@@ -30,5 +30,6 @@
     "Footer": "This is the footer",
     "Header": "Header",
     "DefaultIndexMD": "## This is the reference documentation\n\n{RELEASENOTES}"
-  }
+  },
+  "templateSha": "19e157bc6d8f05360a941f1b92254d8d088c062c"
 }
