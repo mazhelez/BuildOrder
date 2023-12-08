@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@bcptreport",
+  "templateUrl": "https://github.com/mazhelez/AL-Go@fix-incremental-build",
   "CICDPushBranches": [
     "main",
     "release/*",
@@ -31,5 +31,5 @@
     "Header": "Header",
     "DefaultIndexMD": "## This is the reference documentation\n\n{RELEASENOTES}"
   },
-  "templateSha": "b94fb8f4f88e721acad7b8e5fd2b594e6500df59"
+  "templateSha": "0ba00b8d1a6d916fcdfcb36b0c0736927e780b25"
 }
