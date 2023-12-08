@@ -20,7 +20,6 @@
   "excludeEnvironments": [
     "test"
   ],
-  "alwaysBuildAllProjects": true,
   "ALDoc": {
     "ContinuousDeployment": true,
     "ExcludeProjects": [
