@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/mazhelez/AL-Go@fix-GetArtifacts-take2",
+  "templateUrl": "https://github.com/freddydk/AL-Go@bcptreport",
   "CICDPushBranches": [
     "main",
     "release/*",
@@ -30,5 +30,5 @@
     "Header": "Header",
     "DefaultIndexMD": "## This is the reference documentation\n\n{RELEASENOTES}"
   },
-  "templateSha": "13356d47d11db6f04215ffc8717faed4207a2180"
+  "templateSha": "6fb8db5e92506f3ae32434b42d1969f4d1d4facc"
 }
