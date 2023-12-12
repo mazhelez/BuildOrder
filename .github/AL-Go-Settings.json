@@ -21,14 +21,12 @@
     "test"
   ],
   "ALDoc": {
-    "ContinuousDeployment": true,
-    "ExcludeProjects": [
+    "maxReleases": 0,
+    "continuousDeployment": true,
+    "groupByProject": false,
+    "excludeProjects": [
       "test"
-    ],
-    "MaxReleases": 5,
-    "Footer": "This is the footer",
-    "Header": "Header",
-    "DefaultIndexMD": "## This is the reference documentation\n\n{RELEASENOTES}"
+    ]
   },
   "templateSha": "6fb8db5e92506f3ae32434b42d1969f4d1d4facc"
 }
