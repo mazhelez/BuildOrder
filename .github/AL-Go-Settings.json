@@ -13,10 +13,10 @@
   ],
   "DoNotUseCdnForArtifacts": true,
   "useProjectDependencies": true,
-  "useCompilerFolder": false,
-  "doNotPublishApps": false,
+  "useCompilerFolder": true,
+  "doNotPublishApps": true,
   "runs-on": "ubuntu-latest",
-  "gitHubRunner": "windows-latest",
+  "gitHubRunner": "ubuntu-latest",
   "excludeEnvironments": [
     "test"
   ],
