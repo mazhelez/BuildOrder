@@ -23,7 +23,6 @@
   "ALDoc": {
     "maxReleases": 0,
     "continuousDeployment": true,
-    "groupByProject": false,
     "excludeProjects": [
       "test"
     ]
