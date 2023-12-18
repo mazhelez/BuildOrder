@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/freddydk/AL-Go@bcptreport",
+  "templateUrl": "https://github.com/freddydk/AL-Go@nuget",
   "CICDPushBranches": [
     "main",
     "release/*",
@@ -27,5 +27,5 @@
       "test"
     ]
   },
-  "templateSha": "08afe3fdeb5b141d1fbeb9d2af3c611fd2c7d51b"
+  "templateSha": "679d5cf17e51b1cd558453f429df6e59bf2ce95c"
 }
