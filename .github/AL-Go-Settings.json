@@ -17,9 +17,6 @@
   "doNotPublishApps": true,
   "runs-on": "ubuntu-latest",
   "gitHubRunner": "ubuntu-latest",
-  "excludeEnvironments": [
-    "test"
-  ],
   "ALDoc": {
     "maxReleases": 0,
     "continuousDeployment": true,
