@@ -29,7 +29,7 @@ jobs:
       workflowDepth: ${{ steps.DetermineWorkflowDepth.outputs.WorkflowDepth }}
     steps:
       - name: Dump Workflow Information
-        uses: freddydk/AL-Go/Actions/DumpWorkflowInfo@nuget
+        uses: mazhelez/AL-Go/Actions/DumpWorkflowInfo@split-build
         with:
           shell: pwsh
 
@@ -40,14 +40,14 @@ jobs:
 
       - name: Initialize the workflow
         id: init
-        uses: freddydk/AL-Go/Actions/WorkflowInitialize@nuget
+        uses: mazhelez/AL-Go/Actions/WorkflowInitialize@split-build
         with:
           shell: pwsh
           eventId: "DO0100"
 
       - name: Read settings
         id: ReadSettings
-        uses: freddydk/AL-Go/Actions/ReadSettings@nuget
+        uses: mazhelez/AL-Go/Actions/ReadSettings@split-build
         with:
           shell: pwsh
 
@@ -58,7 +58,7 @@ jobs:
 
       - name: Determine Projects To Build
         id: determineProjectsToBuild
-        uses: freddydk/AL-Go/Actions/DetermineProjectsToBuild@nuget
+        uses: mazhelez/AL-Go/Actions/DetermineProjectsToBuild@split-build
         with:
           shell: pwsh
           maxBuildDepth: ${{ env.workflowDepth }}
@@ -139,7 +139,7 @@ jobs:
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: freddydk/AL-Go/Actions/WorkflowPostProcess@nuget
+        uses: mazhelez/AL-Go/Actions/WorkflowPostProcess@split-build
         with:
           shell: pwsh
           eventId: "DO0100"
