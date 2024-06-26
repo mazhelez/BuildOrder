@@ -16,6 +16,7 @@ defaults:
 permissions:
   contents: read
   actions: read
+  pages: read
 
 env:
   workflowDepth: 3
@@ -39,32 +40,32 @@ jobs:
       projects: ${{ steps.determineProjectsToBuild.outputs.ProjectsJson }}
       projectDependenciesJson: ${{ steps.determineProjectsToBuild.outputs.ProjectDependenciesJson }}
       buildOrderJson: ${{ steps.determineProjectsToBuild.outputs.BuildOrderJson }}
-      testOrderJson: ${{ steps.determineProjectsToBuild.outputs.TestOrderJson }}
+      powerPlatformSolutionFolder: ${{ steps.DeterminePowerPlatformSolutionFolder.outputs.powerPlatformSolutionFolder }}
       workflowDepth: ${{ steps.DetermineWorkflowDepth.outputs.WorkflowDepth }}
     steps:
       - name: Dump Workflow Information
-        uses: mazhelez/AL-Go/Actions/DumpWorkflowInfo@split-build
+        uses: microsoft/AL-Go-Actions/DumpWorkflowInfo@v5.2
         with:
           shell: pwsh
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           lfs: true
 
       - name: Initialize the workflow
         id: init
-        uses: mazhelez/AL-Go/Actions/WorkflowInitialize@split-build
+        uses: microsoft/AL-Go-Actions/WorkflowInitialize@v5.2
         with:
           shell: pwsh
           eventId: "DO0091"
 
       - name: Read settings
         id: ReadSettings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@split-build
+        uses: microsoft/AL-Go-Actions/ReadSettings@v5.2
         with:
           shell: pwsh
-          get: type
+          get: type, powerPlatformSolutionFolder
 
       - name: Determine Workflow Depth
         id: DetermineWorkflowDepth
@@ -73,14 +74,20 @@ jobs:
 
       - name: Determine Projects To Build
         id: determineProjectsToBuild
-        uses: mazhelez/AL-Go/Actions/DetermineProjectsToBuild@split-build
+        uses: microsoft/AL-Go-Actions/DetermineProjectsToBuild@v5.2
         with:
           shell: pwsh
           maxBuildDepth: ${{ env.workflowDepth }}
 
+      - name: Determine PowerPlatform Solution Folder
+        id: DeterminePowerPlatformSolutionFolder
+        if: env.type == 'PTE'
+        run: |
+          Add-Content -Encoding UTF8 -Path $env:GITHUB_OUTPUT -Value "powerPlatformSolutionFolder=$($env:powerPlatformSolutionFolder)"
+
       - name: Determine Delivery Target Secrets
         id: DetermineDeliveryTargetSecrets
-        uses: mazhelez/AL-Go/Actions/DetermineDeliveryTargets@split-build
+        uses: microsoft/AL-Go-Actions/DetermineDeliveryTargets@v5.2
         with:
           shell: pwsh
           projectsJson: '${{ steps.determineProjectsToBuild.outputs.ProjectsJson }}'
@@ -88,7 +95,7 @@ jobs:
 
       - name: Read secrets
         id: ReadSecrets
-        uses: mazhelez/AL-Go/Actions/ReadSecrets@split-build
+        uses: microsoft/AL-Go-Actions/ReadSecrets@v5.2
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
@@ -96,7 +103,7 @@ jobs:
 
       - name: Determine Delivery Targets
         id: DetermineDeliveryTargets
-        uses: mazhelez/AL-Go/Actions/DetermineDeliveryTargets@split-build
+        uses: microsoft/AL-Go-Actions/DetermineDeliveryTargets@v5.2
         env:
           Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
         with:
@@ -106,7 +113,7 @@ jobs:
 
       - name: Determine Deployment Environments
         id: DetermineDeploymentEnvironments
-        uses: mazhelez/AL-Go/Actions/DetermineDeploymentEnvironments@split-build
+        uses: microsoft/AL-Go-Actions/DetermineDeploymentEnvironments@v5.2
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -119,16 +126,16 @@ jobs:
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Read settings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@split-build
+        uses: microsoft/AL-Go-Actions/ReadSettings@v5.2
         with:
           shell: pwsh
           get: templateUrl
 
       - name: Check for updates to AL-Go system files
-        uses: mazhelez/AL-Go/Actions/CheckForUpdates@split-build
+        uses: microsoft/AL-Go-Actions/CheckForUpdates@v5.2
         with:
           shell: pwsh
           templateUrl: ${{ env.templateUrl }}
@@ -154,7 +161,7 @@ jobs:
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,codeSignCertificateUrl,*codeSignCertificatePassword,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
       publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
-      publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
+      publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || startswith(github.ref_name, 'releases/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
       signArtifacts: true
       useArtifactCache: true
 
@@ -178,7 +185,7 @@ jobs:
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,codeSignCertificateUrl,*codeSignCertificatePassword,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
       publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
-      publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
+      publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || startswith(github.ref_name, 'releases/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
       signArtifacts: true
       useArtifactCache: true
 
@@ -202,17 +209,31 @@ jobs:
       projectDependenciesJson: ${{ needs.Initialization.outputs.projectDependenciesJson }}
       secrets: 'licenseFileUrl,codeSignCertificateUrl,*codeSignCertificatePassword,keyVaultCertificateUrl,*keyVaultCertificatePassword,keyVaultClientId,gitHubPackagesContext,applicationInsightsConnectionString'
       publishThisBuildArtifacts: ${{ needs.Initialization.outputs.workflowDepth > 1 }}
-      publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
+      publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || startswith(github.ref_name, 'releases/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
       signArtifacts: true
       useArtifactCache: true
 
+  BuildPP:
+    needs: [ Initialization ]
+    if: (!failure()) && (!cancelled()) && needs.Initialization.outputs.powerPlatformSolutionFolder != ''
+    name: Build PowerPlatform Solution
+    uses: ./.github/workflows/_BuildPowerPlatformSolution.yaml
+    secrets: inherit
+    with:
+      shell: ${{ needs.Initialization.outputs.githubRunnerShell }}
+      runsOn: ${{ needs.Initialization.outputs.githubRunner }}
+      parentTelemetryScopeJson: ${{ needs.Initialization.outputs.telemetryScopeJson }}
+      project: ${{ needs.Initialization.outputs.powerPlatformSolutionFolder }}
+      projectName: ${{ needs.Initialization.outputs.powerPlatformSolutionFolder }}
+      publishArtifacts: ${{ github.ref_name == 'main' || startswith(github.ref_name, 'release/') || startswith(github.ref_name, 'releases/') || needs.Initialization.outputs.deliveryTargetsJson != '[]' || needs.Initialization.outputs.environmentCount > 0 }}
+
   DeployALDoc:
     needs: [ Initialization, Build ]
-    if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.generateALDocArtifact == 1 && github.ref_name == 'main'
+    if: (!cancelled()) && needs.Build.result == 'Success' && needs.Initialization.outputs.generateALDocArtifact == 1 && github.ref_name == 'main'
     runs-on: windows-latest
     name: Deploy Reference Documentation
     permissions:
-      contents: write
+      contents: read
       actions: read
       pages: write
       id-token: write
@@ -221,60 +242,64 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: '.artifacts'
 
       - name: Read settings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@split-build
+        uses: microsoft/AL-Go-Actions/ReadSettings@v5.2
         with:
           shell: pwsh
 
       - name: Setup Pages
         if: needs.Initialization.outputs.deployALDocArtifact == 1
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v5
 
       - name: Build Reference Documentation
-        uses: mazhelez/AL-Go/Actions/BuildReferenceDocumentation@split-build
+        uses: microsoft/AL-Go-Actions/BuildReferenceDocumentation@v5.2
         with:
           shell: pwsh
           artifacts: '.artifacts'
 
       - name: Upload pages artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ".aldoc/_site/"
 
       - name: Deploy to GitHub Pages
         if: needs.Initialization.outputs.deployALDocArtifact == 1
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
 
   Deploy:
-    needs: [ Initialization, Build ]
-    if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.environmentCount > 0
+    needs: [ Initialization, Build, BuildPP ]
+    if: (!cancelled()) && (needs.Build.result == 'success' || needs.Build.result == 'skipped') && (needs.BuildPP.result == 'success' || needs.BuildPP.result == 'skipped') && needs.Initialization.outputs.environmentCount > 0
     strategy: ${{ fromJson(needs.Initialization.outputs.environmentsMatrixJson) }}
     runs-on: ${{ fromJson(matrix.os) }}
     name: Deploy to ${{ matrix.environment }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
     environment:
       name: ${{ matrix.environment }}
       url: ${{ steps.Deploy.outputs.environmentUrl }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: '.artifacts'
 
       - name: Read settings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@split-build
+        uses: microsoft/AL-Go-Actions/ReadSettings@v5.2
         with:
-          shell: pwsh
+          shell: ${{ matrix.shell }}
+          get: type,powerPlatformSolutionFolder
 
       - name: EnvName
         id: envName
@@ -285,27 +310,38 @@ jobs:
 
       - name: Read secrets
         id: ReadSecrets
-        uses: mazhelez/AL-Go/Actions/ReadSecrets@split-build
+        uses: microsoft/AL-Go-Actions/ReadSecrets@v5.2
         with:
-          shell: pwsh
+          shell: ${{ matrix.shell }}
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: '${{ steps.envName.outputs.envName }}-AuthContext,${{ steps.envName.outputs.envName }}_AuthContext,AuthContext,${{ steps.envName.outputs.envName }}-EnvironmentName,${{ steps.envName.outputs.envName }}_EnvironmentName,EnvironmentName,projects'
 
-      - name: Deploy
+      - name: Deploy to Business Central
         id: Deploy
-        uses: mazhelez/AL-Go/Actions/Deploy@split-build
+        uses: microsoft/AL-Go-Actions/Deploy@v5.2
+        env:
+          Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
+        with:
+          shell: ${{ matrix.shell }}
+          environmentName: ${{ matrix.environment }}
+          artifactsFolder: '.artifacts'
+          type: 'CD'
+          deploymentEnvironmentsJson: ${{ needs.Initialization.outputs.deploymentEnvironmentsJson }}
+
+      - name: Deploy to Power Platform
+        if: env.type == 'PTE' && env.powerPlatformSolutionFolder != ''
+        uses: microsoft/AL-Go-Actions/DeployPowerPlatform@v5.2
         env:
           Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
         with:
           shell: pwsh
           environmentName: ${{ matrix.environment }}
-          artifacts: '.artifacts'
-          type: 'CD'
+          artifactsFolder: '.artifacts'
           deploymentEnvironmentsJson: ${{ needs.Initialization.outputs.deploymentEnvironmentsJson }}
 
   Deliver:
-    needs: [ Initialization, Build ]
-    if: always() && needs.Build.result == 'Success' && needs.Initialization.outputs.deliveryTargetsJson != '[]'
+    needs: [ Initialization, Build, BuildPP ]
+    if: (!cancelled()) && (needs.Build.result == 'success' || needs.Build.result == 'skipped') && (needs.BuildPP.result == 'success' || needs.BuildPP.result == 'skipped') && needs.Initialization.outputs.deliveryTargetsJson != '[]'
     strategy:
       matrix:
         deliveryTarget: ${{ fromJson(needs.Initialization.outputs.deliveryTargetsJson) }}
@@ -314,28 +350,28 @@ jobs:
     name: Deliver to ${{ matrix.deliveryTarget }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           path: '.artifacts'
 
       - name: Read settings
-        uses: mazhelez/AL-Go/Actions/ReadSettings@split-build
+        uses: microsoft/AL-Go-Actions/ReadSettings@v5.2
         with:
           shell: pwsh
 
       - name: Read secrets
         id: ReadSecrets
-        uses: mazhelez/AL-Go/Actions/ReadSecrets@split-build
+        uses: microsoft/AL-Go-Actions/ReadSecrets@v5.2
         with:
           shell: pwsh
           gitHubSecrets: ${{ toJson(secrets) }}
           getSecrets: '${{ matrix.deliveryTarget }}Context'
 
       - name: Deliver
-        uses: mazhelez/AL-Go/Actions/Deliver@split-build
+        uses: microsoft/AL-Go-Actions/Deliver@v5.2
         env:
           Secrets: '${{ steps.ReadSecrets.outputs.Secrets }}'
         with:
@@ -346,16 +382,16 @@ jobs:
           artifacts: '.artifacts'
 
   PostProcess:
-    needs: [ Initialization, Build, Deploy, Deliver, DeployALDoc ]
+    needs: [ Initialization, Build, BuildPP, Deploy, Deliver, DeployALDoc ]
     if: (!cancelled())
     runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Finalize the workflow
         id: PostProcess
-        uses: mazhelez/AL-Go/Actions/WorkflowPostProcess@split-build
+        uses: microsoft/AL-Go-Actions/WorkflowPostProcess@v5.2
         with:
           shell: pwsh
           eventId: "DO0091"

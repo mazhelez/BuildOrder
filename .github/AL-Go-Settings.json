@@ -1,6 +1,6 @@
 {
   "type": "PTE",
-  "templateUrl": "https://github.com/mazhelez/AL-Go@split-build",
+  "templateUrl": "https://github.com/microsoft/AL-Go-PTE@preview",
   "CICDPushBranches": [
     "main",
     "release/*",
@@ -24,5 +24,5 @@
       "test"
     ]
   },
-  "templateSha": "47dd3ed5487e054376cfcc9850ab9d9eaf9e41d8"
+  "templateSha": "4f808388705483cddebb2baf115256321d55bdc7"
 }
